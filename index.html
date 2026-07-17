@@ -1089,7 +1089,7 @@ async function saveData(shouldRender = true){
         ((o.data || new Date().toISOString().slice(0,10)) + 'T12:00:00');
       return {
         id: o.id,
-        numero: o.numero || `PED-${(o.data || '').replaceAll('-','')}-${String(index+1).padStart(3,'0')}`,
+        numero: o.numero || `PED-${(o.data || new Date().toISOString().slice(0,10)).replaceAll('-','')}-${String(index+1).padStart(3,'0')}`,
         cotacao_origem: o.cotacaoOrigem || null,
         comprador: o.comprador || state.currentUser?.nome || 'Sistema',
         status: o.status || 'Aguardando Confirmação',
@@ -1099,63 +1099,25 @@ async function saveData(shouldRender = true){
       };
     });
 
-    const pedidoItemRows = [];
-    state.orders.forEach(o => {
-      (o.itens || []).forEach(it => {
-        pedidoItemRows.push({
-          id: it.id || uid(),
-          pedido_id: o.id,
-          item_id: it.itemId,
-          fornecedor_id: it.fornecedorId || o.supplierId,
-          quantidade: Number(it.quantidade) || 0,
-          preco_unitario: Number(it.precoUnit) || 0,
-          ultimo_preco: it.ultimoPreco ?? null,
-          prazo_entrega: it.prazoEntrega || null,
-          forma_pagamento: it.formaPagamento || null,
-          justificativa: it.justificativa || null,
-          observacao: it.observacao || null
-        });
-      });
-    });
-
-    // Pais primeiro.
-    await syncTable('fornecedores', supplierRows);
-    await syncTable('itens', itemRows);
-    await syncTable('ofertas', offerRows);
-    await syncTable('pedidos', pedidoRows);
-
-    // Itens dos pedidos.
-    const { error: clearPedidoItensError } = await supabaseClient
-      .from('pedido_itens')
-      .delete()
-      .not('id', 'is', null);
-    dbError(clearPedidoItensError);
-    if(pedidoItemRows.length){
-      const { error } = await supabaseClient.from('pedido_itens').insert(pedidoItemRows);
+    // Salva apenas com UPSERT. Não apaga registros do banco durante um salvamento comum.
+    // Isso evita que uma alteração em Itens falhe por causa de vínculos com ofertas ou pedidos.
+    if(supplierRows.length){
+      const { error } = await supabaseClient.from('fornecedores').upsert(supplierRows, {onConflict:'id'});
       dbError(error);
     }
 
-    // Histórico de preços derivado das ofertas atuais.
-    const { error: clearHistoryError } = await supabaseClient
-      .from('historico_precos')
-      .delete()
-      .not('id', 'is', null);
-    dbError(clearHistoryError);
+    if(itemRows.length){
+      const { error } = await supabaseClient.from('itens').upsert(itemRows, {onConflict:'id'});
+      dbError(error);
+    }
 
-    const historyRows = [];
-    state.offers.forEach(o => {
-      (o.historico || []).forEach(h => historyRows.push({
-        id: uid(),
-        oferta_id: o.id,
-        item_id: o.itemId,
-        fornecedor_id: o.supplierId,
-        preco: Number(h.preco) || 0,
-        registrado_em: (h.data || new Date().toISOString().slice(0,10)) + 'T12:00:00'
-      }));
-    });
+    if(offerRows.length){
+      const { error } = await supabaseClient.from('ofertas').upsert(offerRows, {onConflict:'id'});
+      dbError(error);
+    }
 
-    if(historyRows.length){
-      const { error } = await supabaseClient.from('historico_precos').insert(historyRows);
+    if(pedidoRows.length){
+      const { error } = await supabaseClient.from('pedidos').upsert(pedidoRows, {onConflict:'id'});
       dbError(error);
     }
 
@@ -1166,7 +1128,8 @@ async function saveData(shouldRender = true){
     console.error('Erro ao salvar no Supabase:', e);
     state.saveError = true;
     if(shouldRender){
-      showToast('⚠️ Não foi possível salvar no Supabase. Verifique sua conexão.');
+      const detalhe = e && e.message ? e.message : String(e || 'erro desconhecido');
+      showToast('⚠️ Erro Supabase: ' + detalhe);
     }
     return false;
   }
@@ -1285,9 +1248,17 @@ function renderSidebar(){
       it.label
     )),
     el('div', {class:'sidebar-foot'},
-      el('div', {style:'display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.12);'},
-        el('div', {class:'user-avatar', style:'width:26px;height:26px;font-size:11px;'}, initials(state.currentUser.nome)),
-        el('span', {style:'color:#DCEBFA;font-size:12.5px;font-weight:600;'}, state.currentUser.nome),
+      el('div', {
+        style:'display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.12);cursor:pointer;',
+        onClick:()=>{ state.modal = {type:'profile'}; render(); }
+      },
+        el('div', {class:'user-avatar', style:'width:28px;height:28px;font-size:11px;'},
+          initials((state.currentUser && state.currentUser.nome) || 'Usuário')),
+        el('div', {},
+          el('div', {style:'color:#DCEBFA;font-size:12.5px;font-weight:600;'},
+            (state.currentUser && state.currentUser.nome) || 'Usuário'),
+          el('div', {style:'color:#8FB8DE;font-size:10.5px;margin-top:1px;'}, 'Ver perfil')
+        )
       ),
       el('div', {}, `${state.suppliers.length} fornecedores · ${state.items.length} itens cadastrados`),
       el('button', {class:'login-link', style:'color:#8FB8DE;margin-top:10px;padding:0;', onClick: logout}, '↩ Sair')
@@ -2546,6 +2517,30 @@ async function deleteOrder(id){
 }
 
 function renderModal(){
+  if(state.modal && state.modal.type === 'profile'){
+    const u = state.currentUser || {};
+    return el('div', {class:'modal-overlay', onClick:(e)=>{ if(e.target===e.currentTarget){ state.modal=null; render(); }}},
+      el('div', {class:'modal'},
+        el('h3', {}, 'Meu perfil'),
+        el('div', {style:'display:flex;align-items:center;gap:12px;margin-bottom:18px;'},
+          el('div', {class:'user-avatar', style:'width:44px;height:44px;font-size:15px;'}, initials(u.nome || 'Usuário')),
+          el('div', {},
+            el('div', {style:'font-size:16px;font-weight:700;'}, u.nome || 'Usuário'),
+            el('div', {class:'fornecedor-sub'}, 'Usuário conectado')
+          )
+        ),
+        el('div', {class:'field'},
+          el('label', {}, 'Nome'),
+          el('input', {value:u.nome || '', disabled:'disabled'})
+        ),
+        el('div', {class:'modal-actions'},
+          el('button', {class:'btn secondary', onClick:()=>{ state.modal=null; render(); }}, 'Fechar'),
+          el('button', {class:'btn', onClick:()=>{ state.modal=null; logout(); }}, 'Sair da conta')
+        )
+      )
+    );
+  }
+
   if(!state.modal) return null;
   const overlay = el('div', {class:'modal-overlay', onClick:(e)=>{ if(e.target === e.currentTarget) closeModal(); }});
   let content;
