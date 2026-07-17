@@ -2462,7 +2462,7 @@ function renderEstoque(){
       el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal(m.tipo,m.itemId,m);}},'Editar'),
       el('button',{class:'btn danger-txt small',onClick:(e)=>{e.stopPropagation();deleteStockMovement(m.id);}},'Excluir'));
     mb.appendChild(el('tr',{class:'stock-row',title:'Clique para editar esta movimentação',onClick:()=>openStockMovementModal(m.tipo,m.itemId,m)},
-      el('td',{},formatDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.responsavel||'—'),el('td',{},actions)));
+      el('td',{},fmtDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.responsavel||'—'),el('td',{},actions)));
   });
   if(!state.stockMovements.length) mb.appendChild(el('tr',{},el('td',{colspan:'7'},'Nenhuma movimentação registrada.'))); mt.appendChild(mb);wrap.appendChild(mt);
   if(state.sectors.length){wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Setores'));const sec=el('div',{class:'stock-actions'},...state.sectors.map(s=>el('div',{class:'stock-card',style:'min-width:190px;'},el('strong',{style:'font-size:15px;margin:0 0 6px;'},s.nome),el('span',{style:'font-size:12px;color:var(--ink-soft);'},s.descricao||'Sem descrição'),el('button',{class:'btn danger-txt small',style:'display:block;margin-top:8px;',onClick:()=>deleteSector(s.id)},'Excluir'))));wrap.appendChild(sec);}
