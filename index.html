@@ -757,7 +757,7 @@ mark.hl{
 .dash-alert-row:last-child{ border-bottom:none; }
 .dash-alert-row:hover{ background:#FAFBFB; }
 
-.stock-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.stock-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.stock-card strong{display:block;font-size:25px;margin-top:6px}.stock-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.stock-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line)}.stock-table th,.stock-table td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:12.5px}.stock-table th{background:#F7FAFD;color:var(--ink-soft);font-weight:700}.stock-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.stock-ok{background:#E7F7EF;color:#176B43}.stock-low{background:#FFF2D8;color:#8A5A0A}.stock-out{background:#FDE8E8;color:#A72B2B}.movement-in{color:#176B43;font-weight:700}.movement-out{color:#A72B2B;font-weight:700}@media(max-width:900px){.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.stock-grid{grid-template-columns:1fr}.stock-table{display:block;overflow-x:auto}}
+.stock-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.stock-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.stock-card strong{display:block;font-size:25px;margin-top:6px}.stock-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.stock-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line)}.stock-table th,.stock-table td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:12.5px}.stock-table th{background:#F7FAFD;color:var(--ink-soft);font-weight:700}.stock-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.stock-ok{background:#E7F7EF;color:#176B43}.stock-low{background:#FFF2D8;color:#8A5A0A}.stock-out{background:#FDE8E8;color:#A72B2B}.movement-in{color:#176B43;font-weight:700}.movement-out{color:#A72B2B;font-weight:700}.stock-row{cursor:pointer;transition:background .15s}.stock-row:hover{background:#F3F8FC}.stock-row td:first-child{font-weight:700}.stock-inline-actions{display:flex;gap:6px;flex-wrap:wrap}.stock-hint{font-size:11px;color:var(--ink-soft);margin-top:3px}@media(max-width:900px){.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.stock-grid{grid-template-columns:1fr}.stock-table{display:block;overflow-x:auto}}
 
 </style>
 </head>
@@ -2395,21 +2395,27 @@ async function deleteItem(id){
 async function deleteOffer(id){askConfirm('Remover este vínculo de preço?',async()=>{try{let r=await supabaseClient.from('historico_precos').delete().eq('oferta_id',id);dbError(r.error);r=await supabaseClient.from('ofertas').delete().eq('id',id);dbError(r.error);state.offers=state.offers.filter(o=>o.id!==id);render();showToast('Vínculo removido.');}catch(e){showToast('⚠️ Erro Supabase: '+(e?.message||e));}});}
 async function deleteOrder(id){askConfirm('Excluir este pedido do histórico?',async()=>{try{let r=await supabaseClient.from('pedido_itens').delete().eq('pedido_id',id);dbError(r.error);r=await supabaseClient.from('pedidos').delete().eq('id',id);dbError(r.error);state.orders=state.orders.filter(o=>o.id!==id);render();showToast('Pedido excluído.');}catch(e){showToast('⚠️ Erro Supabase: '+(e?.message||e));}});}
 
-function itemStock(itemId){
-  return state.stockMovements.filter(m=>m.itemId===itemId).reduce((saldo,m)=>saldo+(m.tipo==='entrada'?Number(m.quantidade):-Number(m.quantidade)),0);
+function itemStock(itemId, ignoreMovementId=''){
+  return state.stockMovements.filter(m=>m.itemId===itemId && m.id!==ignoreMovementId).reduce((saldo,m)=>saldo+(m.tipo==='entrada'?Number(m.quantidade):-Number(m.quantidade)),0);
 }
-function openStockMovementModal(tipo='entrada'){ state.modal={type:'stockMovement', movementType:tipo}; render(); }
+function openStockMovementModal(tipo='entrada', presetItemId='', movement=null){
+  state.modal={type:'stockMovement', movementType:movement?.tipo||tipo, presetItemId:presetItemId||movement?.itemId||'', editing:movement}; render();
+}
 function openSectorModal(){ state.modal={type:'sector'}; render(); }
 async function deleteStockMovement(id){
   askConfirm('Excluir esta movimentação de estoque?', async()=>{
-    const {error}=await supabaseClient.from('movimentacoes_estoque').delete().eq('id',id); dbError(error);
-    state.stockMovements=state.stockMovements.filter(m=>m.id!==id); render(); showToast('Movimentação excluída.');
+    try{
+      const {error}=await supabaseClient.from('movimentacoes_estoque').delete().eq('id',id); dbError(error);
+      state.stockMovements=state.stockMovements.filter(m=>m.id!==id); render(); showToast('Movimentação excluída.');
+    }catch(e){showToast('⚠️ Erro Supabase: '+(e?.message||e));}
   });
 }
 async function deleteSector(id){
   askConfirm('Excluir este setor? As movimentações existentes continuarão salvas, mas sem setor vinculado.', async()=>{
-    const {error}=await supabaseClient.from('setores').delete().eq('id',id); dbError(error);
-    state.sectors=state.sectors.filter(s=>s.id!==id); state.stockMovements.forEach(m=>{if(m.setorId===id)m.setorId='';}); render(); showToast('Setor excluído.');
+    try{
+      const {error}=await supabaseClient.from('setores').delete().eq('id',id); dbError(error);
+      state.sectors=state.sectors.filter(s=>s.id!==id); state.stockMovements.forEach(m=>{if(m.setorId===id)m.setorId='';}); render(); showToast('Setor excluído.');
+    }catch(e){showToast('⚠️ Erro Supabase: '+(e?.message||e));}
   });
 }
 function renderEstoque(){
@@ -2418,10 +2424,11 @@ function renderEstoque(){
   const totalSaidas=state.stockMovements.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.quantidade),0);
   const baixos=state.items.filter(i=>itemStock(i.id)<=Number(i.estoqueMinimo||0)).length;
   wrap.appendChild(el('h1',{class:'page-title'},'Estoque'));
-  wrap.appendChild(el('p',{class:'page-sub'},'Controle entradas, saídas, datas, responsáveis e setores de destino.'));
+  wrap.appendChild(el('p',{class:'page-sub'},'Clique em um item para editar. Use os botões da linha para registrar entrada ou dar baixa.'));
   wrap.appendChild(el('div',{class:'stock-actions'},
+    el('button',{class:'btn',onClick:()=>openItemModal(null)},'+ Novo item'),
     el('button',{class:'btn',onClick:()=>openStockMovementModal('entrada')},'+ Entrada'),
-    el('button',{class:'btn secondary',onClick:()=>openStockMovementModal('saida')},'− Saída'),
+    el('button',{class:'btn secondary',onClick:()=>openStockMovementModal('saida')},'− Dar baixa'),
     el('button',{class:'btn secondary',onClick:openSectorModal},'🏭 Novo setor')
   ));
   wrap.appendChild(el('div',{class:'stock-grid'},
@@ -2431,30 +2438,60 @@ function renderEstoque(){
     el('div',{class:'stock-card'},'Estoque baixo/zerado',el('strong',{},String(baixos)))
   ));
   const table=el('table',{class:'stock-table'});
-  table.appendChild(el('thead',{},el('tr',{},...['Item','Unidade','Saldo','Mínimo','Situação'].map(h=>el('th',{},h)))));
+  table.appendChild(el('thead',{},el('tr',{},...['Item','Unidade','Saldo','Mínimo','Situação','Ações'].map(h=>el('th',{},h)))));
   const body=el('tbody',{});
-  state.items.forEach(i=>{const saldo=itemStock(i.id),min=Number(i.estoqueMinimo||0);const cls=saldo<=0?'stock-out':saldo<=min?'stock-low':'stock-ok';const label=saldo<=0?'Sem estoque':saldo<=min?'Estoque baixo':'Normal';body.appendChild(el('tr',{},el('td',{},i.nome),el('td',{},i.unidade||'—'),el('td',{},String(saldo)),el('td',{},String(min)),el('td',{},el('span',{class:'stock-badge '+cls},label))));});
-  if(!state.items.length) body.appendChild(el('tr',{},el('td',{colspan:'5'},'Nenhum item cadastrado.')));
+  state.items.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).forEach(i=>{
+    const saldo=itemStock(i.id),min=Number(i.estoqueMinimo||0);const cls=saldo<=0?'stock-out':saldo<=min?'stock-low':'stock-ok';const label=saldo<=0?'Sem estoque':saldo<=min?'Estoque baixo':'Normal';
+    const actions=el('div',{class:'stock-inline-actions'},
+      el('button',{class:'btn small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('entrada',i.id);}},'+ Entrada'),
+      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('saida',i.id);}},'− Baixa'),
+      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openItemModal(i);}},'Editar')
+    );
+    body.appendChild(el('tr',{class:'stock-row',title:'Clique para editar este item',onClick:()=>openItemModal(i)},
+      el('td',{},i.nome,el('div',{class:'stock-hint'},i.categoria||'Sem categoria')),
+      el('td',{},i.unidade||'—'),el('td',{},String(saldo)),el('td',{},String(min)),
+      el('td',{},el('span',{class:'stock-badge '+cls},label)),el('td',{},actions)));
+  });
+  if(!state.items.length) body.appendChild(el('tr',{},el('td',{colspan:'6'},'Nenhum item cadastrado. Clique em “Novo item” para começar.')));
   table.appendChild(body); wrap.appendChild(table);
-  wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Últimas movimentações'));
-  const mt=el('table',{class:'stock-table'});mt.appendChild(el('thead',{},el('tr',{},...['Data','Tipo','Item','Quantidade','Setor','Responsável',''].map(h=>el('th',{},h)))));const mb=el('tbody',{});
-  state.stockMovements.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')).forEach(m=>{const item=itemById(m.itemId);const setor=state.sectors.find(s=>s.id===m.setorId);mb.appendChild(el('tr',{},el('td',{},formatDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.responsavel||'—'),el('td',{},el('button',{class:'btn danger-txt small',onClick:()=>deleteStockMovement(m.id)},'Excluir'))));});
+  wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Histórico de movimentações'));
+  const mt=el('table',{class:'stock-table'});mt.appendChild(el('thead',{},el('tr',{},...['Data','Tipo','Item','Quantidade','Setor','Responsável','Ações'].map(h=>el('th',{},h)))));const mb=el('tbody',{});
+  state.stockMovements.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')).forEach(m=>{
+    const item=itemById(m.itemId);const setor=state.sectors.find(s=>s.id===m.setorId);
+    const actions=el('div',{class:'stock-inline-actions'},
+      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal(m.tipo,m.itemId,m);}},'Editar'),
+      el('button',{class:'btn danger-txt small',onClick:(e)=>{e.stopPropagation();deleteStockMovement(m.id);}},'Excluir'));
+    mb.appendChild(el('tr',{class:'stock-row',title:'Clique para editar esta movimentação',onClick:()=>openStockMovementModal(m.tipo,m.itemId,m)},
+      el('td',{},formatDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.responsavel||'—'),el('td',{},actions)));
+  });
   if(!state.stockMovements.length) mb.appendChild(el('tr',{},el('td',{colspan:'7'},'Nenhuma movimentação registrada.'))); mt.appendChild(mb);wrap.appendChild(mt);
   if(state.sectors.length){wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Setores'));const sec=el('div',{class:'stock-actions'},...state.sectors.map(s=>el('div',{class:'stock-card',style:'min-width:190px;'},el('strong',{style:'font-size:15px;margin:0 0 6px;'},s.nome),el('span',{style:'font-size:12px;color:var(--ink-soft);'},s.descricao||'Sem descrição'),el('button',{class:'btn danger-txt small',style:'display:block;margin-top:8px;',onClick:()=>deleteSector(s.id)},'Excluir'))));wrap.appendChild(sec);}
   return wrap;
 }
 function renderStockMovementForm(){
-  const tipo=state.modal.movementType||'entrada'; const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},tipo==='entrada'?'Nova entrada':'Nova saída'));
+  const editing=state.modal.editing||null;
+  const tipo=state.modal.movementType||editing?.tipo||'entrada';
+  const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},editing?(tipo==='entrada'?'Editar entrada':'Editar saída'):(tipo==='entrada'?'Nova entrada':'Nova saída')));
   if(!state.items.length){modal.appendChild(el('p',{},'Cadastre pelo menos um item antes de movimentar o estoque.'));modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Fechar')));return modal;}
-  const item=el('select',{},...state.items.map(i=>el('option',{value:i.id},i.nome)));const qtd=el('input',{type:'number',min:'0.01',step:'0.01',placeholder:'0'});const data=el('input',{type:'date',value:new Date().toISOString().slice(0,10)});const setor=el('select',{},el('option',{value:''},tipo==='saida'?'Selecione o setor':'Sem setor'),...state.sectors.map(s=>el('option',{value:s.id},s.nome)));const fornecedor=el('select',{},el('option',{value:''},'Sem fornecedor'),...state.suppliers.map(s=>el('option',{value:s.id},s.nome)));const resp=el('input',{value:state.currentUser?.nome||'',placeholder:'Responsável'});const obs=el('textarea',{placeholder:'Observações'});
+  const selectedItem=editing?.itemId||state.modal.presetItemId||state.items[0].id;
+  const item=el('select',{},...state.items.map(i=>el('option',{value:i.id,selected:i.id===selectedItem?'selected':null},i.nome)));
+  const qtd=el('input',{type:'number',min:'0.01',step:'0.01',placeholder:'0',value:editing?editing.quantidade:''});
+  const data=el('input',{type:'date',value:editing?.data||new Date().toISOString().slice(0,10)});
+  const setor=el('select',{},el('option',{value:''},tipo==='saida'?'Selecione o setor':'Sem setor'),...state.sectors.map(s=>el('option',{value:s.id,selected:s.id===editing?.setorId?'selected':null},s.nome)));
+  const fornecedor=el('select',{},el('option',{value:''},'Sem fornecedor'),...state.suppliers.map(s=>el('option',{value:s.id,selected:s.id===editing?.supplierId?'selected':null},s.nome)));
+  const resp=el('input',{value:editing?.responsavel||state.currentUser?.nome||'',placeholder:'Responsável'});const obs=el('textarea',{placeholder:'Observações'},editing?.observacao||'');
   modal.appendChild(el('div',{class:'field'},el('label',{},'Item *'),item));modal.appendChild(el('div',{class:'field-row'},el('div',{class:'field'},el('label',{},'Quantidade *'),qtd),el('div',{class:'field'},el('label',{},'Data *'),data)));modal.appendChild(el('div',{class:'field'},el('label',{},tipo==='saida'?'Setor de destino':'Setor relacionado'),setor));if(tipo==='entrada')modal.appendChild(el('div',{class:'field'},el('label',{},'Fornecedor'),fornecedor));modal.appendChild(el('div',{class:'field'},el('label',{},'Responsável'),resp));modal.appendChild(el('div',{class:'field'},el('label',{},'Observação'),obs));
-  modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{const q=Number(qtd.value);if(!(q>0)){qtd.focus();return;}if(tipo==='saida'&&q>itemStock(item.value)){showToast('Saldo insuficiente para esta saída.');return;}state.stockMovements.push({id:uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:fornecedor.value||'',pedidoId:'',responsavel:resp.value.trim(),observacao:obs.value.trim()});const ok=await saveData(false);closeModal();if(ok)showToast('Movimentação registrada.');}},'Salvar')));return modal;
+  modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{
+    const q=Number(qtd.value);if(!(q>0)){qtd.focus();return;}
+    const available=itemStock(item.value,editing?.id||'');if(tipo==='saida'&&q>available){showToast('Saldo insuficiente. Disponível: '+available);return;}
+    const dataObj={id:editing?.id||uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:tipo==='entrada'?(fornecedor.value||''):'',pedidoId:editing?.pedidoId||'',responsavel:resp.value.trim(),observacao:obs.value.trim()};
+    if(editing) Object.assign(editing,dataObj); else state.stockMovements.push(dataObj);
+    const ok=await saveData(false);closeModal();if(ok)showToast(editing?'Movimentação atualizada.':'Movimentação registrada.');
+  }},editing?'Salvar alterações':'Salvar')));return modal;
 }
 function renderSectorForm(){const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},'Novo setor'));const nome=el('input',{placeholder:'Ex: Manutenção'});const desc=el('textarea',{placeholder:'Descrição opcional'});modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));modal.appendChild(el('div',{class:'field'},el('label',{},'Descrição'),desc));modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{if(!nome.value.trim()){nome.focus();return;}state.sectors.push({id:uid(),nome:nome.value.trim(),descricao:desc.value.trim()});const ok=await saveData(false);closeModal();if(ok)showToast('Setor cadastrado.');}},'Salvar')));return modal;}
 
 function renderModal(){
-  if(state.modal && state.modal.type==='stockMovement') return renderStockMovementForm();
-  if(state.modal && state.modal.type==='sector') return renderSectorForm();
   if(state.modal && state.modal.type === 'profile'){
     const u = state.currentUser || {};
     return el('div', {class:'modal-overlay', onClick:(e)=>{ if(e.target===e.currentTarget){ state.modal=null; render(); }}},
@@ -2482,7 +2519,9 @@ function renderModal(){
   if(!state.modal) return null;
   const overlay = el('div', {class:'modal-overlay', onClick:(e)=>{ if(e.target === e.currentTarget) closeModal(); }});
   let content;
-  if(state.modal.type === 'supplier') content = renderSupplierForm();
+  if(state.modal.type === 'stockMovement') content = renderStockMovementForm();
+  else if(state.modal.type === 'sector') content = renderSectorForm();
+  else if(state.modal.type === 'supplier') content = renderSupplierForm();
   else if(state.modal.type === 'item') content = renderItemForm();
   else if(state.modal.type === 'offer') content = renderOfferForm();
   else if(state.modal.type === 'history') content = renderHistoryModal();
