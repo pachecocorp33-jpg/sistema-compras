@@ -761,11 +761,19 @@ mark.hl{
 <body>
 <div id="root"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ---------- Vanilla JS app (no build tools needed) ---------- */
 
 const STORAGE_KEY = 'compras-dados-v1';
 const USERS_KEY = 'meggs-usuarios-v1';
+
+const SUPABASE_URL = 'https://rpqwqhuhgqtovxtacinj.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_UVDByySGyYkuNullzTpMFA_hGkGUgSy';
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
 
 let state = {
   suppliers: [],
@@ -792,7 +800,7 @@ let state = {
   loginError: '',
 };
 
-function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16);}); }
 
 const PAYMENT_OPTIONS = ['PIX à vista', 'Boleto à vista', 'Faturado 15 dias', 'Faturado 30 dias', 'Faturado 45 dias', 'Faturado 60 dias', 'Cartão de crédito'];
 const SEGMENTO_OPTIONS = ['EPI', 'Limpeza', 'Ferramentas', 'Escritório', 'Embalagens', 'Construção', 'Elétrica', 'Alimentício', 'Uniformes', 'Manutenção', 'Outros'];
@@ -864,31 +872,154 @@ function seedData(){
   return { suppliers, items, offers, orders };
 }
 
+function dbError(error){
+  if(error) throw new Error(error.message || String(error));
+}
+
+async function syncTable(table, rows){
+  const { data: existing, error: readError } = await supabaseClient
+    .from(table)
+    .select('id');
+  dbError(readError);
+
+  const wanted = new Set(rows.map(r => r.id));
+  const stale = (existing || []).map(r => r.id).filter(id => !wanted.has(id));
+
+  if(stale.length){
+    const { error } = await supabaseClient.from(table).delete().in('id', stale);
+    dbError(error);
+  }
+
+  if(rows.length){
+    const { error } = await supabaseClient.from(table).upsert(rows, { onConflict:'id' });
+    dbError(error);
+  }
+}
+
+function mapSupplierFromDb(s){
+  return {
+    id: s.id,
+    nome: s.nome || '',
+    cnpj: s.cnpj || '',
+    cidade: s.cidade || '',
+    endereco: s.endereco || '',
+    telefone: s.telefone || '',
+    contato: s.contato || '',
+    prazoEntrega: s.prazo_entrega || '',
+    formasPagamento: s.formas_pagamento || [],
+    segmento: s.segmento || ''
+  };
+}
+
+function mapItemFromDb(i){
+  return {
+    id: i.id,
+    nome: i.nome || '',
+    categoria: i.categoria || '',
+    unidade: i.unidade || '',
+    ca: i.ca || ''
+  };
+}
+
 async function loadData(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, true);
-    if(res && res.value){
-      const parsed = JSON.parse(res.value);
-      state.suppliers = parsed.suppliers || [];
-      state.items = parsed.items || [];
-      state.offers = parsed.offers || [];
-      state.orders = parsed.orders || [];
-    } else {
+    const [
+      fornecedoresRes,
+      itensRes,
+      ofertasRes,
+      historicoRes,
+      pedidosRes,
+      pedidoItensRes
+    ] = await Promise.all([
+      supabaseClient.from('fornecedores').select('*').order('nome'),
+      supabaseClient.from('itens').select('*').order('nome'),
+      supabaseClient.from('ofertas').select('*'),
+      supabaseClient.from('historico_precos').select('*').order('registrado_em'),
+      supabaseClient.from('pedidos').select('*').order('criado_em', {ascending:false}),
+      supabaseClient.from('pedido_itens').select('*')
+    ]);
+
+    [fornecedoresRes, itensRes, ofertasRes, historicoRes, pedidosRes, pedidoItensRes]
+      .forEach(r => dbError(r.error));
+
+    const hasCloudData =
+      (fornecedoresRes.data || []).length ||
+      (itensRes.data || []).length ||
+      (ofertasRes.data || []).length ||
+      (pedidosRes.data || []).length;
+
+    if(!hasCloudData){
       const seed = seedData();
       state.suppliers = seed.suppliers;
       state.items = seed.items;
       state.offers = seed.offers;
       state.orders = seed.orders;
-      await saveData();
+      await saveData(false);
+    } else {
+      state.suppliers = (fornecedoresRes.data || []).map(mapSupplierFromDb);
+      state.items = (itensRes.data || []).map(mapItemFromDb);
+
+      const historyByOffer = {};
+      (historicoRes.data || []).forEach(h => {
+        (historyByOffer[h.oferta_id] ||= []).push({
+          preco: Number(h.preco),
+          data: (h.registrado_em || '').slice(0,10)
+        });
+      });
+
+      state.offers = (ofertasRes.data || []).map(o => ({
+        id: o.id,
+        itemId: o.item_id,
+        supplierId: o.fornecedor_id,
+        preco: Number(o.preco),
+        dataAtualizacao: o.data_atualizacao,
+        obs: o.observacao || '',
+        historico: historyByOffer[o.id] || [{
+          preco: Number(o.preco),
+          data: o.data_atualizacao
+        }]
+      }));
+
+      const orderItemsByOrder = {};
+      (pedidoItensRes.data || []).forEach(pi => {
+        (orderItemsByOrder[pi.pedido_id] ||= []).push({
+          itemId: pi.item_id,
+          quantidade: Number(pi.quantidade),
+          precoUnit: Number(pi.preco_unitario),
+          fornecedorId: pi.fornecedor_id,
+          ultimoPreco: pi.ultimo_preco === null ? null : Number(pi.ultimo_preco),
+          prazoEntrega: pi.prazo_entrega || '',
+          formaPagamento: pi.forma_pagamento || '',
+          justificativa: pi.justificativa || '',
+          observacao: pi.observacao || ''
+        });
+      });
+
+      state.orders = (pedidosRes.data || []).map(p => {
+        const itens = orderItemsByOrder[p.id] || [];
+        return {
+          id: p.id,
+          numero: p.numero,
+          supplierId: itens[0]?.fornecedorId || null,
+          data: (p.criado_em || '').slice(0,10),
+          criadoEm: p.criado_em,
+          comprador: p.comprador || '',
+          status: p.status || 'Aguardando Confirmação',
+          cotacaoOrigem: p.cotacao_origem || '',
+          itens,
+          observacao: p.observacao || ''
+        };
+      });
     }
   } catch(e){
-    const seed = seedData();
-    state.suppliers = seed.suppliers;
-    state.items = seed.items;
-    state.offers = seed.offers;
-    state.orders = seed.orders;
-    await saveData();
+    console.error('Erro ao carregar dados do Supabase:', e);
+    state.saveError = true;
+    state.suppliers = [];
+    state.items = [];
+    state.offers = [];
+    state.orders = [];
   }
+
   await loadUsers();
   state.loaded = true;
   render();
@@ -896,40 +1027,21 @@ async function loadData(){
 
 async function loadUsers(){
   try{
-    const res = await window.storage.get(USERS_KEY, true);
-    if(res && res.value){
-      state.users = JSON.parse(res.value);
-    } else {
-      state.users = [];
-    }
+    state.users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
   } catch(e){
     state.users = [];
   }
 }
 
-async function storageSetWithRetry(key, value, retries){
-  retries = retries === undefined ? 2 : retries;
-  let lastError = null;
-  for(let attempt = 0; attempt <= retries; attempt++){
-    try{
-      await window.storage.set(key, value, true);
-      return true;
-    } catch(e){
-      lastError = e;
-      console.error(`Tentativa ${attempt+1} falhou ao salvar "${key}":`, e);
-      if(attempt < retries){
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-      }
-    }
-  }
-  console.error('Todas as tentativas de salvar falharam:', lastError);
-  return false;
-}
-
 async function saveUsers(){
-  const ok = await storageSetWithRetry(USERS_KEY, JSON.stringify(state.users));
-  if(!ok) showToast('⚠️ Não foi possível salvar o usuário agora. Tente novamente em instantes.');
-  return ok;
+  try{
+    localStorage.setItem(USERS_KEY, JSON.stringify(state.users));
+    return true;
+  } catch(e){
+    console.error('Erro ao salvar usuários locais:', e);
+    showToast('⚠️ Não foi possível salvar o usuário neste navegador.');
+    return false;
+  }
 }
 
 function logout(){
@@ -940,19 +1052,124 @@ function logout(){
   render();
 }
 
-async function saveData(){
-  const ok = await storageSetWithRetry(STORAGE_KEY, JSON.stringify({
-    suppliers: state.suppliers,
-    items: state.items,
-    offers: state.offers,
-    orders: state.orders,
-  }));
-  state.saveError = !ok;
-  if(!ok){
-    showToast('⚠️ Não foi possível salvar agora. Suas alterações continuam na tela — tente salvar de novo.');
+async function saveData(shouldRender = true){
+  try{
+    const supplierRows = state.suppliers.map(s => ({
+      id: s.id,
+      nome: s.nome,
+      cnpj: s.cnpj || null,
+      cidade: s.cidade || null,
+      endereco: s.endereco || null,
+      telefone: s.telefone || null,
+      contato: s.contato || null,
+      prazo_entrega: s.prazoEntrega || null,
+      formas_pagamento: s.formasPagamento || [],
+      segmento: s.segmento || null
+    }));
+
+    const itemRows = state.items.map(i => ({
+      id: i.id,
+      nome: i.nome,
+      categoria: i.categoria || null,
+      unidade: i.unidade || null,
+      ca: i.ca || null
+    }));
+
+    const offerRows = state.offers.map(o => ({
+      id: o.id,
+      item_id: o.itemId,
+      fornecedor_id: o.supplierId,
+      preco: Number(o.preco) || 0,
+      data_atualizacao: o.dataAtualizacao || new Date().toISOString().slice(0,10),
+      observacao: o.obs || null
+    }));
+
+    const pedidoRows = state.orders.map((o, index) => {
+      const createdAt = o.criadoEm ||
+        ((o.data || new Date().toISOString().slice(0,10)) + 'T12:00:00');
+      return {
+        id: o.id,
+        numero: o.numero || `PED-${(o.data || '').replaceAll('-','')}-${String(index+1).padStart(3,'0')}`,
+        cotacao_origem: o.cotacaoOrigem || null,
+        comprador: o.comprador || state.currentUser?.nome || 'Sistema',
+        status: o.status || 'Aguardando Confirmação',
+        observacao: o.observacao || null,
+        valor_total: orderTotal(o),
+        criado_em: createdAt
+      };
+    });
+
+    const pedidoItemRows = [];
+    state.orders.forEach(o => {
+      (o.itens || []).forEach(it => {
+        pedidoItemRows.push({
+          id: it.id || uid(),
+          pedido_id: o.id,
+          item_id: it.itemId,
+          fornecedor_id: it.fornecedorId || o.supplierId,
+          quantidade: Number(it.quantidade) || 0,
+          preco_unitario: Number(it.precoUnit) || 0,
+          ultimo_preco: it.ultimoPreco ?? null,
+          prazo_entrega: it.prazoEntrega || null,
+          forma_pagamento: it.formaPagamento || null,
+          justificativa: it.justificativa || null,
+          observacao: it.observacao || null
+        });
+      });
+    });
+
+    // Pais primeiro.
+    await syncTable('fornecedores', supplierRows);
+    await syncTable('itens', itemRows);
+    await syncTable('ofertas', offerRows);
+    await syncTable('pedidos', pedidoRows);
+
+    // Itens dos pedidos.
+    const { error: clearPedidoItensError } = await supabaseClient
+      .from('pedido_itens')
+      .delete()
+      .not('id', 'is', null);
+    dbError(clearPedidoItensError);
+    if(pedidoItemRows.length){
+      const { error } = await supabaseClient.from('pedido_itens').insert(pedidoItemRows);
+      dbError(error);
+    }
+
+    // Histórico de preços derivado das ofertas atuais.
+    const { error: clearHistoryError } = await supabaseClient
+      .from('historico_precos')
+      .delete()
+      .not('id', 'is', null);
+    dbError(clearHistoryError);
+
+    const historyRows = [];
+    state.offers.forEach(o => {
+      (o.historico || []).forEach(h => historyRows.push({
+        id: uid(),
+        oferta_id: o.id,
+        item_id: o.itemId,
+        fornecedor_id: o.supplierId,
+        preco: Number(h.preco) || 0,
+        registrado_em: (h.data || new Date().toISOString().slice(0,10)) + 'T12:00:00'
+      }));
+    });
+
+    if(historyRows.length){
+      const { error } = await supabaseClient.from('historico_precos').insert(historyRows);
+      dbError(error);
+    }
+
+    state.saveError = false;
+    if(shouldRender) render();
+    return true;
+  } catch(e){
+    console.error('Erro ao salvar no Supabase:', e);
+    state.saveError = true;
+    if(shouldRender){
+      showToast('⚠️ Não foi possível salvar no Supabase. Verifique sua conexão.');
+    }
+    return false;
   }
-  render();
-  return ok;
 }
 
 function showToast(msg){
