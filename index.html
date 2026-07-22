@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Meggs Supply — Painel de Compras</title>
+<title>Meggs Supply — Compras, Estoque e Solicitações</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
@@ -759,7 +759,16 @@ mark.hl{
 
 .stock-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.stock-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}.stock-card strong{display:block;font-size:25px;margin-top:6px}.stock-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.stock-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;border:1px solid var(--line)}.stock-table th,.stock-table td{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:12.5px}.stock-table th{background:#F7FAFD;color:var(--ink-soft);font-weight:700}.stock-badge{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700}.stock-ok{background:#E7F7EF;color:#176B43}.stock-low{background:#FFF2D8;color:#8A5A0A}.stock-out{background:#FDE8E8;color:#A72B2B}.movement-in{color:#176B43;font-weight:700}.movement-out{color:#A72B2B;font-weight:700}.stock-row{cursor:pointer;transition:background .15s}.stock-row:hover{background:#F3F8FC}.stock-row td:first-child{font-weight:700}.stock-inline-actions{display:flex;gap:6px;flex-wrap:wrap}.stock-hint{font-size:11px;color:var(--ink-soft);margin-top:3px}
 .stock-report-bar{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:0 0 18px}.stock-report-bar .field{margin:0;min-width:155px}.stock-report-bar .field label{margin-bottom:5px}.stock-report-info{font-size:11.5px;color:var(--ink-soft);margin-right:auto;line-height:1.45;max-width:350px}.stock-report-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
-@media(max-width:900px){.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.stock-grid{grid-template-columns:1fr}.stock-table{display:block;overflow-x:auto}.stock-report-bar{align-items:stretch}.stock-report-bar .field{min-width:calc(50% - 5px);flex:1}.stock-report-info{width:100%;max-width:none}.stock-report-actions{width:100%}.stock-report-actions .btn{flex:1}}
+.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:7px;font-size:13.5px;font-family:'Inter',sans-serif;outline:none;background:#fff;color:var(--ink);min-height:82px;resize:vertical}.field textarea:focus{border-color:var(--teal)}
+.table-scroll{width:100%;overflow-x:auto;border-radius:12px}.table-scroll .stock-table{min-width:850px}
+.pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px}.pagination-info{font-size:12px;color:var(--ink-soft)}.pagination-buttons{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.page-btn{min-width:34px;height:34px;padding:0 9px;border:1px solid var(--line);background:#fff;border-radius:7px;color:var(--ink-soft);font-weight:700;cursor:pointer}.page-btn:hover:not(:disabled){border-color:var(--teal);color:var(--teal-dark)}.page-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}.page-btn:disabled{opacity:.45;cursor:not-allowed}
+.readonly-banner{display:flex;align-items:flex-start;gap:10px;background:var(--blue-pale);border:1px solid #B9D9F2;color:var(--teal-dark);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12.5px;line-height:1.45}
+.role-badge{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--blue-pale);color:var(--teal-dark)}.role-badge.gerencia{background:#F3EAFB;color:#6B3C8E}.role-badge.setor{background:#F1F5EC;color:#4C6B2E}
+.request-form-card,.request-card,.users-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}.request-form-card h2,.request-card h3{margin:0 0 6px;font-family:'Space Grotesk',sans-serif}.request-item-row{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(170px,.8fr) minmax(240px,1.4fr) 36px;gap:10px;align-items:end;padding:12px;border:1px solid #E8F0F7;border-radius:10px;background:#FAFCFE;margin-bottom:10px}.request-item-row .field{margin-bottom:0}.request-qty-group{display:grid;grid-template-columns:1fr 1fr;gap:7px}.request-remove{width:34px;height:38px;border:0;background:transparent;color:var(--danger);font-size:18px;cursor:pointer;border-radius:7px}.request-remove:hover{background:#FBEAE7}.request-status{display:inline-flex;padding:4px 9px;border-radius:999px;font-size:10.5px;font-weight:800}.request-status.pendente{background:#FFF2D8;color:#8A5A0A}.request-status.analise{background:#E4F1FC;color:#1B5A8C}.request-status.aprovada{background:#E7F7EF;color:#176B43}.request-status.concluida{background:#E9EEF3;color:#40566C}.request-status.recusada{background:#FDE8E8;color:#A72B2B}.request-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}.request-meta{font-size:12px;color:var(--ink-soft);line-height:1.5}.request-items-table{width:100%;border-collapse:collapse;margin-top:12px}.request-items-table th,.request-items-table td{padding:8px 10px;border-bottom:1px solid #EEF2F1;text-align:left;font-size:12px}.request-items-table th{font-size:10px;text-transform:uppercase;color:var(--ink-soft);background:#FAFBFB}.request-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.request-note{margin-top:10px;padding:9px 11px;background:#F7FAFD;border-radius:8px;font-size:12px;color:var(--ink-soft)}
+.user-list-row{display:grid;grid-template-columns:1.2fr .8fr 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #EEF2F1}.user-list-row:last-child{border-bottom:0}.user-name-wrap{display:flex;align-items:center;gap:10px}.user-sector{font-size:11px;color:var(--ink-soft);margin-top:2px}.login-role-note{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);background:#FAFCFE;padding:9px 11px;border-radius:8px;margin:-4px 0 14px;font-size:11.5px;color:var(--ink-soft)}
+.request-count{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;padding:0 6px;border-radius:999px;background:#FBE0B0;color:#784A06;font-size:10px;font-weight:800;margin-left:auto}
+@media(max-width:900px){.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.request-item-row{grid-template-columns:1fr 1fr}.request-item-row .reason-field{grid-column:1/-1}.request-remove{grid-column:2;justify-self:end}.user-list-row{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.stock-grid{grid-template-columns:1fr}.stock-table{display:block;overflow-x:auto}.stock-report-bar{align-items:stretch}.stock-report-bar .field{min-width:calc(50% - 5px);flex:1}.stock-report-info{width:100%;max-width:none}.stock-report-actions{width:100%}.stock-report-actions .btn{flex:1}.request-item-row{grid-template-columns:1fr}.request-item-row .reason-field{grid-column:auto}.request-remove{grid-column:auto;justify-self:end}.user-list-row{grid-template-columns:1fr}.pagination{align-items:flex-start}}
 
 </style>
 </head>
@@ -772,6 +781,8 @@ mark.hl{
 
 const STORAGE_KEY = 'compras-dados-v1';
 const USERS_KEY = 'meggs-usuarios-v1';
+const PURCHASE_REQUESTS_KEY = 'meggs-solicitacoes-compra-v1';
+const STOCK_EXTRA_KEY = 'meggs-estoque-detalhes-v1';
 
 const SUPABASE_URL = 'https://rpqwqhuhgqtovxtacinj.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_UVDByySGyYkuNullzTpMFA_hGkGUgSy';
@@ -789,6 +800,10 @@ let state = {
   stockMovements: [],
   stockReportStart: '',
   stockReportEnd: '',
+  stockMovementPage: 1,
+  stockMovementPageSize: 10,
+  purchaseRequests: [],
+  requestStatusFilter: '',
   users: [],
   currentUser: null,
   loaded: false,
@@ -814,6 +829,25 @@ function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-
 const PAYMENT_OPTIONS = ['PIX à vista', 'Boleto à vista', 'Faturado 15 dias', 'Faturado 30 dias', 'Faturado 45 dias', 'Faturado 60 dias', 'Cartão de crédito'];
 const SEGMENTO_OPTIONS = ['EPI', 'Limpeza', 'Ferramentas', 'Escritório', 'Embalagens', 'Construção', 'Elétrica', 'Alimentício', 'Uniformes', 'Manutenção', 'Outros'];
 const UNIDADE_OPTIONS = ['unidade', 'par', 'caixa', 'pacote', 'kg', 'litro', 'metro', 'rolo', 'conjunto'];
+const REQUEST_UNIT_OPTIONS = ['unidade', 'caixa', 'pacote', 'kg', 'litro', 'metro', 'rolo', 'par', 'conjunto'];
+const USER_ROLE_LABELS = {compras:'Compras', gerencia:'Gerência', setor:'Demais setores'};
+const DEFAULT_DEPARTMENTS = ['Qualidade', 'Financeiro', 'Logística', 'Produção'];
+
+function normalizeUser(user){
+  const role=['compras','gerencia','setor'].includes(user?.role)?user.role:'compras';
+  return {...user, role, setor:role==='setor'?(user?.setor||'Outros'):''};
+}
+function currentRole(){ return normalizeUser(state.currentUser||{}).role; }
+function isPrivilegedUser(){ return currentRole()==='compras' || currentRole()==='gerencia'; }
+function isSectorUser(){ return currentRole()==='setor'; }
+function roleLabel(user){ return USER_ROLE_LABELS[normalizeUser(user||{}).role] || 'Compras'; }
+function canAccessView(view){ return isPrivilegedUser() || ['estoque','solicitacao'].includes(view); }
+function defaultViewForUser(){ return isSectorUser()?'estoque':'dashboard'; }
+function requestStatusClass(status){
+  return ({'Pendente':'pendente','Em análise':'analise','Aprovada':'aprovada','Concluída':'concluida','Recusada':'recusada'})[status]||'pendente';
+}
+function requestCode(req){ return req.numero || `SOL-${String(req.criadoEm||'').slice(0,10).replaceAll('-','')}-${String((state.purchaseRequests.indexOf(req)+1)||1).padStart(3,'0')}`; }
+
 
 // Componente reutilizável: linha de chips de seleção única (clicar escolhe, clicar de novo desmarca)
 function buildSingleChipSelector(options, initialValue){
@@ -887,7 +921,31 @@ function mapItemFromDb(i){
   };
 }
 
+
+function loadStockExtras(){
+  try{return JSON.parse(localStorage.getItem(STOCK_EXTRA_KEY)||'{}')||{};}catch(e){return {};}
+}
+function saveStockMovementExtras(){
+  try{
+    const extras={};
+    state.stockMovements.forEach(m=>{ if(m.pessoaSetor) extras[m.id]={pessoaSetor:m.pessoaSetor}; });
+    localStorage.setItem(STOCK_EXTRA_KEY,JSON.stringify(extras));
+    return true;
+  }catch(e){console.error('Erro ao salvar detalhes locais do estoque:',e);return false;}
+}
+async function loadPurchaseRequests(){
+  try{state.purchaseRequests=JSON.parse(localStorage.getItem(PURCHASE_REQUESTS_KEY)||'[]')||[];}catch(e){state.purchaseRequests=[];}
+}
+async function savePurchaseRequests(shouldRender=true){
+  try{
+    localStorage.setItem(PURCHASE_REQUESTS_KEY,JSON.stringify(state.purchaseRequests));
+    if(shouldRender) render();
+    return true;
+  }catch(e){console.error('Erro ao salvar solicitações:',e);showToast('⚠️ Não foi possível salvar a solicitação neste navegador.');return false;}
+}
+
 async function loadData(){
+  const stockExtras=loadStockExtras();
   try{
     const [
       fornecedoresRes,
@@ -925,6 +983,7 @@ async function loadData(){
       supplierId:m.fornecedor_id || '',
       pedidoId:m.pedido_id || '',
       responsavel:m.responsavel || '',
+      pessoaSetor:stockExtras[m.id]?.pessoaSetor || '',
       observacao:m.observacao || ''
     }));
 
@@ -965,13 +1024,15 @@ async function loadData(){
     state.sectors = []; state.stockMovements = [];
   }
   await loadUsers();
+  await loadPurchaseRequests();
   state.loaded = true;
   render();
 }
 
 async function loadUsers(){
   try{
-    state.users = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
+    state.users = (JSON.parse(localStorage.getItem(USERS_KEY) || '[]')||[]).map(normalizeUser);
+    localStorage.setItem(USERS_KEY, JSON.stringify(state.users));
   } catch(e){
     state.users = [];
   }
@@ -990,6 +1051,7 @@ async function saveUsers(){
 
 function logout(){
   state.currentUser = null;
+  state.view = 'dashboard';
   state.loginMode = 'select';
   state.loginTarget = null;
   state.loginError = '';
@@ -1008,6 +1070,7 @@ async function saveData(shouldRender = true){
     for(const [table,rows] of [['fornecedores',supplierRows],['itens',itemRows],['ofertas',offerRows],['setores',sectorRows],['pedidos',pedidoRows],['movimentacoes_estoque',movementRows]]){
       if(rows.length){ const {error}=await supabaseClient.from(table).upsert(rows,{onConflict:'id'}); dbError(error); }
     }
+    saveStockMovementExtras();
     state.saveError=false;
     if(shouldRender) render();
     return true;
@@ -1025,8 +1088,10 @@ function showToast(msg){
 }
 
 function setView(v){
+  if(!canAccessView(v)){ showToast('Seu perfil não tem acesso a esta tela.'); return; }
   state.view = v;
   state.expandedItem = null;
+  if(v==='estoque') state.stockMovementPage=1;
   render();
 }
 
@@ -1109,42 +1174,47 @@ function openHistoryModal(offer){
 /* ---------------- Views ---------------- */
 
 function renderSidebar(){
-  const items = [
-    {id:'dashboard', label:'Dashboard', icon:'📊'},
-    {id:'buscar', label:'Buscar item', icon:'🔍'},
-    {id:'fornecedores', label:'Fornecedores', icon:'🏢'},
-    {id:'itens', label:'Itens & Preços', icon:'📦'},
-    {id:'pedidos', label:'Pedidos', icon:'🧾'},
+  const pendingRequests=state.purchaseRequests.filter(r=>r.status==='Pendente').length;
+  const allItems = [
+    {id:'dashboard', label:'Dashboard', icon:'📊', privileged:true},
+    {id:'buscar', label:'Buscar item', icon:'🔍', privileged:true},
+    {id:'fornecedores', label:'Fornecedores', icon:'🏢', privileged:true},
+    {id:'itens', label:'Itens & Preços', icon:'📦', privileged:true},
+    {id:'pedidos', label:'Pedidos', icon:'🧾', privileged:true},
     {id:'estoque', label:'Estoque', icon:'📦'},
-    {id:'cotacao', label:'Prévia de Cotação', icon:'📝'},
-    {id:'segmentos', label:'Segmentos', icon:'🗂️'},
+    {id:'solicitacao', label:'Solicitação de compra', icon:'🛒', sector:true},
+    {id:'solicitacoes', label:'Solicitações de compras', icon:'📨', privileged:true, count:pendingRequests},
+    {id:'cotacao', label:'Prévia de Cotação', icon:'📝', privileged:true},
+    {id:'segmentos', label:'Segmentos', icon:'🗂️', privileged:true},
+    {id:'usuarios', label:'Usuários e acessos', icon:'👥', privileged:true},
   ];
+  const items=allItems.filter(it=>isPrivilegedUser()?it.privileged||it.id==='estoque':it.id==='estoque'||it.sector);
+  const current=normalizeUser(state.currentUser||{});
   const nav = el('div', {class:'sidebar'},
     el('div', {},
       el('p', {class:'brand'}, 'Meggs Supply'),
-      el('p', {class:'brand-sub'}, 'Painel de Compras'),
+      el('p', {class:'brand-sub'}, isSectorUser() ? `Portal · ${current.setor}` : 'Painel de Compras'),
     ),
     ...items.map(it => el('button', {
         class: 'nav-btn' + (state.view===it.id ? ' active':''),
         onClick: ()=>setView(it.id)
       },
       el('span',{class:'nav-icon'}, it.icon),
-      it.label
+      it.label,
+      it.count ? el('span',{class:'request-count'},String(it.count)) : null
     )),
     el('div', {class:'sidebar-foot'},
       el('div', {
         style:'display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.12);cursor:pointer;',
         onClick:()=>{ state.modal = {type:'profile'}; render(); }
       },
-        el('div', {class:'user-avatar', style:'width:28px;height:28px;font-size:11px;'},
-          initials((state.currentUser && state.currentUser.nome) || 'Usuário')),
+        el('div', {class:'user-avatar', style:'width:28px;height:28px;font-size:11px;'}, initials(current.nome || 'Usuário')),
         el('div', {},
-          el('div', {style:'color:#DCEBFA;font-size:12.5px;font-weight:600;'},
-            (state.currentUser && state.currentUser.nome) || 'Usuário'),
-          el('div', {style:'color:#8FB8DE;font-size:10.5px;margin-top:1px;'}, 'Ver perfil')
+          el('div', {style:'color:#DCEBFA;font-size:12.5px;font-weight:600;'}, current.nome || 'Usuário'),
+          el('div', {style:'color:#8FB8DE;font-size:10.5px;margin-top:1px;'}, isSectorUser()?`${roleLabel(current)} · ${current.setor}`:roleLabel(current))
         )
       ),
-      el('div', {}, `${state.suppliers.length} fornecedores · ${state.items.length} itens cadastrados`),
+      isPrivilegedUser()?el('div', {}, `${state.suppliers.length} fornecedores · ${state.items.length} itens cadastrados`):el('div',{},'Acesso de consulta ao estoque'),
       el('button', {class:'login-link', style:'color:#8FB8DE;margin-top:10px;padding:0;', onClick: logout}, '↩ Sair')
     )
   );
@@ -1863,6 +1933,8 @@ function renderDashboard(){
   grid.appendChild(dashCard({ icon:'💵', value:fmtMoney(totalPedidosValor), label:'Valor total comprado', onClick:()=>goTo('pedidos') }));
   grid.appendChild(dashCard({ icon:'💰', value:fmtMoney(economia), label:'Economia identificada', sub:'vs. menor preço disponível hoje', variant: economia>0?'good':'', onClick:()=>goTo('cotacao') }));
   grid.appendChild(dashCard({ icon:'⚠️', value:itensSemCotacao.length, label:'Itens sem cotação', variant: itensSemCotacao.length>0?'alert':'', onClick:()=>goTo('itens') }));
+  const pendingRequests=state.purchaseRequests.filter(r=>r.status==='Pendente').length;
+  grid.appendChild(dashCard({ icon:'📨', value:pendingRequests, label:'Solicitações pendentes', variant:pendingRequests>0?'alert':'', onClick:()=>goTo('solicitacoes') }));
   wrap.appendChild(grid);
 
   // ---- Gráficos: gastos mensais + distribuição por segmento ----
@@ -2403,14 +2475,15 @@ function itemStock(itemId, ignoreMovementId=''){
   return state.stockMovements.filter(m=>m.itemId===itemId && m.id!==ignoreMovementId).reduce((saldo,m)=>saldo+(m.tipo==='entrada'?Number(m.quantidade):-Number(m.quantidade)),0);
 }
 function openStockMovementModal(tipo='entrada', presetItemId='', movement=null){
+  if(!isPrivilegedUser()){showToast('Seu perfil possui acesso somente para consulta.');return;}
   state.modal={type:'stockMovement', movementType:movement?.tipo||tipo, presetItemId:presetItemId||movement?.itemId||'', editing:movement}; render();
 }
-function openSectorModal(){ state.modal={type:'sector'}; render(); }
+function openSectorModal(){ if(!isPrivilegedUser()){showToast('Acesso restrito.');return;} state.modal={type:'sector'}; render(); }
 async function deleteStockMovement(id){
   askConfirm('Excluir esta movimentação de estoque?', async()=>{
     try{
       const {error}=await supabaseClient.from('movimentacoes_estoque').delete().eq('id',id); dbError(error);
-      state.stockMovements=state.stockMovements.filter(m=>m.id!==id); render(); showToast('Movimentação excluída.');
+      state.stockMovements=state.stockMovements.filter(m=>m.id!==id); saveStockMovementExtras(); render(); showToast('Movimentação excluída.');
     }catch(e){showToast('⚠️ Erro Supabase: '+(e?.message||e));}
   });
 }
@@ -2478,10 +2551,10 @@ function downloadStockReportCSV(start,end){
     ['Item','Unidade','Entradas','Saídas','Saldo do período','Saldo atual','Movimentações']
   ];
   report.items.forEach(r=>lines.push([r.nome,r.unidade,r.entradas,r.saidas,r.saldoPeriodo,r.saldoAtual,r.movimentacoes]));
-  lines.push([],['DETALHAMENTO'],['Data','Tipo','Item','Unidade','Quantidade','Setor','Fornecedor','Responsável','Observação']);
+  lines.push([],['DETALHAMENTO'],['Data','Tipo','Item','Unidade','Quantidade','Setor','Pessoa do setor','Fornecedor','Registrado por','Observação']);
   report.movements.forEach(m=>{
     const item=itemById(m.itemId),setor=state.sectors.find(s=>s.id===m.setorId),supplier=supplierById(m.supplierId);
-    lines.push([fmtDate(String(m.data||'').slice(0,10)),m.tipo==='entrada'?'Entrada':'Saída',item?.nome||'Item excluído',item?.unidade||'—',m.quantidade,setor?.nome||'',supplier?.nome||'',m.responsavel||'',m.observacao||'']);
+    lines.push([fmtDate(String(m.data||'').slice(0,10)),m.tipo==='entrada'?'Entrada':'Saída',item?.nome||'Item excluído',item?.unidade||'—',m.quantidade,setor?.nome||'',m.pessoaSetor||'',supplier?.nome||'',m.responsavel||'',m.observacao||'']);
   });
   const csv='\uFEFF'+lines.map(row=>row.map(csvCell).join(';')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -2500,49 +2573,72 @@ function openStockReport(start,end){
   const details=report.movements.map(m=>{
     const item=itemById(m.itemId),setor=state.sectors.find(s=>s.id===m.setorId),supplier=supplierById(m.supplierId);
     const complemento=m.tipo==='entrada'?(supplier?.nome||'—'):(setor?.nome||'—');
-    return `<tr><td>${fmtDate(String(m.data||'').slice(0,10))}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'Entrada':'Saída'}</td><td>${escapeXml(item?.nome||'Item excluído')}</td><td>${Number(m.quantidade).toLocaleString('pt-BR')} ${escapeXml(item?.unidade||'')}</td><td>${escapeXml(complemento)}</td><td>${escapeXml(m.responsavel||'—')}</td><td>${escapeXml(m.observacao||'—')}</td></tr>`;
+    return `<tr><td>${fmtDate(String(m.data||'').slice(0,10))}</td><td class="${m.tipo==='entrada'?'in':'out'}">${m.tipo==='entrada'?'Entrada':'Saída'}</td><td>${escapeXml(item?.nome||'Item excluído')}</td><td>${Number(m.quantidade).toLocaleString('pt-BR')} ${escapeXml(item?.unidade||'')}</td><td>${escapeXml(complemento)}</td><td>${escapeXml(m.pessoaSetor||'—')}</td><td>${escapeXml(m.responsavel||'—')}</td><td>${escapeXml(m.observacao||'—')}</td></tr>`;
   }).join('');
   const win=window.open('','_blank');
   if(!win){showToast('Permita pop-ups para abrir o relatório.');return;}
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Relatório de Estoque</title><style>
     *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#172436;margin:0;background:#eef5fb}.page{max-width:1050px;margin:24px auto;background:#fff;padding:28px;border-radius:12px}.head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;border-bottom:2px solid #1B5A8C;padding-bottom:16px}.brand{font-size:22px;font-weight:800;color:#1B5A8C}.muted{color:#5D7690;font-size:12px;line-height:1.5}.actions{display:flex;gap:8px;margin:18px 0}.btn{border:0;border-radius:7px;padding:9px 13px;font-weight:700;cursor:pointer;background:#2E8BD6;color:#fff}.btn.secondary{background:#fff;color:#1B5A8C;border:1px solid #b8d0e5}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.card{border:1px solid #d7e5f2;border-radius:9px;padding:13px}.card span{font-size:11px;color:#5D7690;text-transform:uppercase}.card strong{font-size:22px;display:block;margin-top:5px}h2{font-size:16px;margin:24px 0 8px}table{width:100%;border-collapse:collapse;font-size:12px}th{background:#f3f8fc;text-align:left;color:#5D7690;font-size:10px;text-transform:uppercase}th,td{padding:9px;border:1px solid #dfeaf3;vertical-align:top}.in{color:#176B43;font-weight:700}.out{color:#A72B2B;font-weight:700}.foot{margin-top:18px;font-size:10px;color:#7890a5;text-align:right}@media(max-width:700px){.page{margin:0;border-radius:0;padding:16px}.cards{grid-template-columns:repeat(2,1fr)}.head{display:block}.actions{flex-wrap:wrap}table{display:block;overflow:auto}}@media print{body{background:#fff}.page{max-width:none;margin:0;padding:0}.actions{display:none}.page{box-shadow:none}.cards{break-inside:avoid}h2{break-after:avoid}tr{break-inside:avoid}}
-  </style></head><body><div class="page"><div class="head"><div><div class="brand">Meggs Supply</div><div style="font-size:18px;font-weight:700;margin-top:4px">Relatório de movimentações de estoque</div></div><div class="muted"><strong>Período:</strong> ${fmtDate(start)} a ${fmtDate(end)}<br><strong>Gerado em:</strong> ${escapeXml(generatedAt)}<br><strong>Responsável:</strong> ${escapeXml(state.currentUser?.nome||'Usuário')}</div></div><div class="actions"><button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button><button class="btn secondary" onclick="window.close()">Fechar relatório</button></div><div class="cards"><div class="card"><span>Movimentações</span><strong>${report.movements.length}</strong></div><div class="card"><span>Entradas registradas</span><strong class="in">${report.entradas}</strong></div><div class="card"><span>Saídas registradas</span><strong class="out">${report.saidas}</strong></div><div class="card"><span>Itens movimentados</span><strong>${report.itensMovimentados}</strong></div></div><h2>Resumo por item</h2><table><thead><tr><th>Item</th><th>Unidade</th><th>Entradas</th><th>Saídas</th><th>Saldo no período</th><th>Saldo atual</th></tr></thead><tbody>${rows}</tbody></table><h2>Detalhamento das movimentações</h2><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Quantidade</th><th>Origem / Destino</th><th>Responsável</th><th>Observação</th></tr></thead><tbody>${details}</tbody></table><div class="foot">Meggs Supply — relatório gerado automaticamente pelo painel de compras.</div></div></body></html>`);
+  </style></head><body><div class="page"><div class="head"><div><div class="brand">Meggs Supply</div><div style="font-size:18px;font-weight:700;margin-top:4px">Relatório de movimentações de estoque</div></div><div class="muted"><strong>Período:</strong> ${fmtDate(start)} a ${fmtDate(end)}<br><strong>Gerado em:</strong> ${escapeXml(generatedAt)}<br><strong>Responsável:</strong> ${escapeXml(state.currentUser?.nome||'Usuário')}</div></div><div class="actions"><button class="btn" onclick="window.print()">Imprimir / Salvar em PDF</button><button class="btn secondary" onclick="window.close()">Fechar relatório</button></div><div class="cards"><div class="card"><span>Movimentações</span><strong>${report.movements.length}</strong></div><div class="card"><span>Entradas registradas</span><strong class="in">${report.entradas}</strong></div><div class="card"><span>Saídas registradas</span><strong class="out">${report.saidas}</strong></div><div class="card"><span>Itens movimentados</span><strong>${report.itensMovimentados}</strong></div></div><h2>Resumo por item</h2><table><thead><tr><th>Item</th><th>Unidade</th><th>Entradas</th><th>Saídas</th><th>Saldo no período</th><th>Saldo atual</th></tr></thead><tbody>${rows}</tbody></table><h2>Detalhamento das movimentações</h2><table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th>Quantidade</th><th>Origem / Destino</th><th>Pessoa do setor</th><th>Registrado por</th><th>Observação</th></tr></thead><tbody>${details}</tbody></table><div class="foot">Meggs Supply — relatório gerado automaticamente pelo painel de compras.</div></div></body></html>`);
   win.document.close();
+}
+
+function renderPagination(totalItems,page,pageSize,onChange){
+  const totalPages=Math.max(1,Math.ceil(totalItems/pageSize));
+  const current=Math.min(Math.max(1,page),totalPages);
+  const wrap=el('div',{class:'pagination'});
+  const first=totalItems?((current-1)*pageSize+1):0;
+  const last=Math.min(current*pageSize,totalItems);
+  wrap.appendChild(el('div',{class:'pagination-info'},totalItems?`Exibindo ${first}–${last} de ${totalItems} movimentações`:'Nenhuma movimentação'));
+  const buttons=el('div',{class:'pagination-buttons'});
+  buttons.appendChild(el('button',{class:'page-btn',disabled:current===1?'disabled':null,onClick:()=>onChange(current-1)},'‹'));
+  let pages=[];
+  if(totalPages<=7) pages=Array.from({length:totalPages},(_,i)=>i+1);
+  else{
+    pages=[1];
+    if(current>4) pages.push('...');
+    for(let p=Math.max(2,current-2);p<=Math.min(totalPages-1,current+2);p++) pages.push(p);
+    if(current<totalPages-3) pages.push('...');
+    pages.push(totalPages);
+  }
+  pages.forEach(p=>buttons.appendChild(p==='...'?el('span',{class:'pagination-info',style:'padding:0 4px;'},'…'):el('button',{class:'page-btn'+(p===current?' active':''),onClick:()=>onChange(p)},String(p))));
+  buttons.appendChild(el('button',{class:'page-btn',disabled:current===totalPages?'disabled':null,onClick:()=>onChange(current+1)},'›'));
+  wrap.appendChild(buttons);
+  return wrap;
 }
 
 function renderEstoque(){
   stockReportDefaultDates();
+  const canEdit=isPrivilegedUser();
   const wrap=el('div',{});
   const totalEntradas=state.stockMovements.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+Number(m.quantidade),0);
   const totalSaidas=state.stockMovements.filter(m=>m.tipo==='saida').reduce((s,m)=>s+Number(m.quantidade),0);
   const baixos=state.items.filter(i=>itemStock(i.id)<=Number(i.estoqueMinimo||0)).length;
   wrap.appendChild(el('h1',{class:'page-title'},'Estoque'));
-  wrap.appendChild(el('p',{class:'page-sub'},'Clique em um item para editar. Use os botões da linha para registrar entrada ou dar baixa.'));
-  wrap.appendChild(el('div',{class:'stock-actions'},
-    el('button',{class:'btn',onClick:()=>openItemModal(null)},'+ Novo item'),
-    el('button',{class:'btn',onClick:()=>openStockMovementModal('entrada')},'+ Entrada'),
-    el('button',{class:'btn secondary',onClick:()=>openStockMovementModal('saida')},'− Dar baixa'),
-    el('button',{class:'btn secondary',onClick:openSectorModal},'🏭 Novo setor')
-  ));
-  const reportStart=el('input',{type:'date',value:state.stockReportStart});
-  const reportEnd=el('input',{type:'date',value:state.stockReportEnd});
-  reportStart.addEventListener('change',()=>{state.stockReportStart=reportStart.value;});
-  reportEnd.addEventListener('change',()=>{state.stockReportEnd=reportEnd.value;});
-  wrap.appendChild(el('div',{class:'stock-report-bar'},
-    el('div',{class:'stock-report-info'},el('strong',{},'Exportar movimentações'),el('div',{},'Selecione o período para gerar um mini relatório com entradas, saídas, saldo por item e histórico detalhado.')),
-    el('div',{class:'field'},el('label',{},'Data inicial'),reportStart),
-    el('div',{class:'field'},el('label',{},'Data final'),reportEnd),
-    el('div',{class:'stock-report-actions'},
-      el('button',{class:'btn secondary',onClick:()=>{
-        if(reportStart.value&&reportEnd.value&&reportStart.value>reportEnd.value){showToast('A data inicial não pode ser maior que a final.');return;}
-        downloadStockReportCSV(reportStart.value,reportEnd.value);
-      }},'⬇ Exportar CSV'),
-      el('button',{class:'btn',onClick:()=>{
-        if(reportStart.value&&reportEnd.value&&reportStart.value>reportEnd.value){showToast('A data inicial não pode ser maior que a final.');return;}
-        openStockReport(reportStart.value,reportEnd.value);
-      }},'📄 Gerar relatório')
-    )
-  ));
+  wrap.appendChild(el('p',{class:'page-sub'},canEdit?'Controle de saldos, entradas, baixas e histórico de movimentações.':'Consulte os itens disponíveis e a situação atual do estoque.'));
+  if(!canEdit){
+    wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'👁️'),el('div',{},el('strong',{},'Acesso somente para consulta'),el('div',{},'Seu perfil pode visualizar o estoque e o histórico, mas não pode cadastrar itens, editar saldos, registrar entradas ou dar baixas.'))));
+  }else{
+    wrap.appendChild(el('div',{class:'stock-actions'},
+      el('button',{class:'btn',onClick:()=>openItemModal(null)},'+ Novo item'),
+      el('button',{class:'btn',onClick:()=>openStockMovementModal('entrada')},'+ Entrada'),
+      el('button',{class:'btn secondary',onClick:()=>openStockMovementModal('saida')},'− Dar baixa'),
+      el('button',{class:'btn secondary',onClick:openSectorModal},'🏭 Novo setor')
+    ));
+    const reportStart=el('input',{type:'date',value:state.stockReportStart});
+    const reportEnd=el('input',{type:'date',value:state.stockReportEnd});
+    reportStart.addEventListener('change',()=>{state.stockReportStart=reportStart.value;});
+    reportEnd.addEventListener('change',()=>{state.stockReportEnd=reportEnd.value;});
+    wrap.appendChild(el('div',{class:'stock-report-bar'},
+      el('div',{class:'stock-report-info'},el('strong',{},'Exportar movimentações'),el('div',{},'Selecione o período para gerar um mini relatório com entradas, saídas, saldo por item e histórico detalhado.')),
+      el('div',{class:'field'},el('label',{},'Data inicial'),reportStart),
+      el('div',{class:'field'},el('label',{},'Data final'),reportEnd),
+      el('div',{class:'stock-report-actions'},
+        el('button',{class:'btn secondary',onClick:()=>{if(reportStart.value&&reportEnd.value&&reportStart.value>reportEnd.value){showToast('A data inicial não pode ser maior que a final.');return;}downloadStockReportCSV(reportStart.value,reportEnd.value);}},'⬇ Exportar CSV'),
+        el('button',{class:'btn',onClick:()=>{if(reportStart.value&&reportEnd.value&&reportStart.value>reportEnd.value){showToast('A data inicial não pode ser maior que a final.');return;}openStockReport(reportStart.value,reportEnd.value);}},'📄 Gerar relatório')
+      )
+    ));
+  }
   wrap.appendChild(el('div',{class:'stock-grid'},
     el('div',{class:'stock-card'},'Itens cadastrados',el('strong',{},String(state.items.length))),
     el('div',{class:'stock-card'},'Total de entradas',el('strong',{},String(totalEntradas))),
@@ -2550,37 +2646,47 @@ function renderEstoque(){
     el('div',{class:'stock-card'},'Estoque baixo/zerado',el('strong',{},String(baixos)))
   ));
   const table=el('table',{class:'stock-table'});
-  table.appendChild(el('thead',{},el('tr',{},...['Item','Unidade','Saldo','Mínimo','Situação','Ações'].map(h=>el('th',{},h)))));
+  const stockHeaders=canEdit?['Item','Unidade','Saldo','Mínimo','Situação','Ações']:['Item','Unidade','Saldo','Mínimo','Situação'];
+  table.appendChild(el('thead',{},el('tr',{},...stockHeaders.map(h=>el('th',{},h)))));
   const body=el('tbody',{});
   state.items.slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')).forEach(i=>{
     const saldo=itemStock(i.id),min=Number(i.estoqueMinimo||0);const cls=saldo<=0?'stock-out':saldo<=min?'stock-low':'stock-ok';const label=saldo<=0?'Sem estoque':saldo<=min?'Estoque baixo':'Normal';
-    const actions=el('div',{class:'stock-inline-actions'},
-      el('button',{class:'btn small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('entrada',i.id);}},'+ Entrada'),
-      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('saida',i.id);}},'− Baixa'),
-      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openItemModal(i);}},'Editar')
-    );
-    body.appendChild(el('tr',{class:'stock-row',title:'Clique para editar este item',onClick:()=>openItemModal(i)},
-      el('td',{},i.nome,el('div',{class:'stock-hint'},i.categoria||'Sem categoria')),
-      el('td',{},i.unidade||'—'),el('td',{},String(saldo)),el('td',{},String(min)),
-      el('td',{},el('span',{class:'stock-badge '+cls},label)),el('td',{},actions)));
+    const cells=[el('td',{},i.nome,el('div',{class:'stock-hint'},i.categoria||'Sem categoria')),el('td',{},i.unidade||'—'),el('td',{},String(saldo)),el('td',{},String(min)),el('td',{},el('span',{class:'stock-badge '+cls},label))];
+    if(canEdit){
+      const actions=el('div',{class:'stock-inline-actions'},el('button',{class:'btn small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('entrada',i.id);}},'+ Entrada'),el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal('saida',i.id);}},'− Baixa'),el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openItemModal(i);}},'Editar'));
+      cells.push(el('td',{},actions));
+    }
+    body.appendChild(el('tr',canEdit?{class:'stock-row',title:'Clique para editar este item',onClick:()=>openItemModal(i)}:{},...cells));
   });
-  if(!state.items.length) body.appendChild(el('tr',{},el('td',{colspan:'6'},'Nenhum item cadastrado. Clique em “Novo item” para começar.')));
-  table.appendChild(body); wrap.appendChild(table);
+  if(!state.items.length) body.appendChild(el('tr',{},el('td',{colspan:String(stockHeaders.length)},'Nenhum item cadastrado.')));
+  table.appendChild(body);wrap.appendChild(el('div',{class:'table-scroll'},table));
+
   wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Histórico de movimentações'));
-  const mt=el('table',{class:'stock-table'});mt.appendChild(el('thead',{},el('tr',{},...['Data','Tipo','Item','Quantidade','Setor','Responsável','Ações'].map(h=>el('th',{},h)))));const mb=el('tbody',{});
-  state.stockMovements.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||'')).forEach(m=>{
+  const movements=state.stockMovements.slice().sort((a,b)=>((b.data||'')+(b.id||'')).localeCompare((a.data||'')+(a.id||'')));
+  const totalPages=Math.max(1,Math.ceil(movements.length/state.stockMovementPageSize));
+  if(state.stockMovementPage>totalPages) state.stockMovementPage=totalPages;
+  const pageMovements=movements.slice((state.stockMovementPage-1)*state.stockMovementPageSize,state.stockMovementPage*state.stockMovementPageSize);
+  const mt=el('table',{class:'stock-table'});
+  const historyHeaders=canEdit?['Data','Tipo','Item','Quantidade','Setor','Pessoa do setor','Registrado por','Ações']:['Data','Tipo','Item','Quantidade','Setor','Pessoa do setor','Registrado por'];
+  mt.appendChild(el('thead',{},el('tr',{},...historyHeaders.map(h=>el('th',{},h)))));
+  const mb=el('tbody',{});
+  pageMovements.forEach(m=>{
     const item=itemById(m.itemId);const setor=state.sectors.find(s=>s.id===m.setorId);
-    const actions=el('div',{class:'stock-inline-actions'},
-      el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal(m.tipo,m.itemId,m);}},'Editar'),
-      el('button',{class:'btn danger-txt small',onClick:(e)=>{e.stopPropagation();deleteStockMovement(m.id);}},'Excluir'));
-    mb.appendChild(el('tr',{class:'stock-row',title:'Clique para editar esta movimentação',onClick:()=>openStockMovementModal(m.tipo,m.itemId,m)},
-      el('td',{},fmtDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.responsavel||'—'),el('td',{},actions)));
+    const cells=[el('td',{},fmtDate(m.data)),el('td',{class:m.tipo==='entrada'?'movement-in':'movement-out'},m.tipo==='entrada'?'Entrada':'Saída'),el('td',{},item?.nome||'Item excluído'),el('td',{},String(m.quantidade)),el('td',{},setor?.nome||'—'),el('td',{},m.pessoaSetor||'—'),el('td',{},m.responsavel||'—')];
+    if(canEdit){
+      const actions=el('div',{class:'stock-inline-actions'},el('button',{class:'btn secondary small',onClick:(e)=>{e.stopPropagation();openStockMovementModal(m.tipo,m.itemId,m);}},'Editar'),el('button',{class:'btn danger-txt small',onClick:(e)=>{e.stopPropagation();deleteStockMovement(m.id);}},'Excluir'));
+      cells.push(el('td',{},actions));
+    }
+    mb.appendChild(el('tr',canEdit?{class:'stock-row',title:'Clique para editar esta movimentação',onClick:()=>openStockMovementModal(m.tipo,m.itemId,m)}:{},...cells));
   });
-  if(!state.stockMovements.length) mb.appendChild(el('tr',{},el('td',{colspan:'7'},'Nenhuma movimentação registrada.'))); mt.appendChild(mb);wrap.appendChild(mt);
-  if(state.sectors.length){wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Setores'));const sec=el('div',{class:'stock-actions'},...state.sectors.map(s=>el('div',{class:'stock-card',style:'min-width:190px;'},el('strong',{style:'font-size:15px;margin:0 0 6px;'},s.nome),el('span',{style:'font-size:12px;color:var(--ink-soft);'},s.descricao||'Sem descrição'),el('button',{class:'btn danger-txt small',style:'display:block;margin-top:8px;',onClick:()=>deleteSector(s.id)},'Excluir'))));wrap.appendChild(sec);}
+  if(!movements.length) mb.appendChild(el('tr',{},el('td',{colspan:String(historyHeaders.length)},'Nenhuma movimentação registrada.')));
+  mt.appendChild(mb);wrap.appendChild(el('div',{class:'table-scroll'},mt));
+  if(movements.length>state.stockMovementPageSize){wrap.appendChild(renderPagination(movements.length,state.stockMovementPage,state.stockMovementPageSize,(page)=>{state.stockMovementPage=page;render();}));}
+  if(canEdit&&state.sectors.length){wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Setores'));const sec=el('div',{class:'stock-actions'},...state.sectors.map(s=>el('div',{class:'stock-card',style:'min-width:190px;'},el('strong',{style:'font-size:15px;margin:0 0 6px;'},s.nome),el('span',{style:'font-size:12px;color:var(--ink-soft);'},s.descricao||'Sem descrição'),el('button',{class:'btn danger-txt small',style:'display:block;margin-top:8px;',onClick:()=>deleteSector(s.id)},'Excluir'))));wrap.appendChild(sec);}
   return wrap;
 }
 function renderStockMovementForm(){
+  if(!isPrivilegedUser()) return el('div',{class:'modal'},el('h3',{},'Acesso restrito'),el('p',{},'Seu perfil não pode alterar o estoque.'),el('div',{class:'modal-actions'},el('button',{class:'btn',onClick:closeModal},'Fechar')));
   const editing=state.modal.editing||null;
   const tipo=state.modal.movementType||editing?.tipo||'entrada';
   const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},editing?(tipo==='entrada'?'Editar entrada':'Editar saída'):(tipo==='entrada'?'Nova entrada':'Nova saída')));
@@ -2591,17 +2697,165 @@ function renderStockMovementForm(){
   const data=el('input',{type:'date',value:editing?.data||new Date().toISOString().slice(0,10)});
   const setor=el('select',{},el('option',{value:''},tipo==='saida'?'Selecione o setor':'Sem setor'),...state.sectors.map(s=>el('option',{value:s.id,selected:s.id===editing?.setorId?'selected':null},s.nome)));
   const fornecedor=el('select',{},el('option',{value:''},'Sem fornecedor'),...state.suppliers.map(s=>el('option',{value:s.id,selected:s.id===editing?.supplierId?'selected':null},s.nome)));
-  const resp=el('input',{value:editing?.responsavel||state.currentUser?.nome||'',placeholder:'Responsável'});const obs=el('textarea',{placeholder:'Observações'},editing?.observacao||'');
-  modal.appendChild(el('div',{class:'field'},el('label',{},'Item *'),item));modal.appendChild(el('div',{class:'field-row'},el('div',{class:'field'},el('label',{},'Quantidade *'),qtd),el('div',{class:'field'},el('label',{},'Data *'),data)));modal.appendChild(el('div',{class:'field'},el('label',{},tipo==='saida'?'Setor de destino':'Setor relacionado'),setor));if(tipo==='entrada')modal.appendChild(el('div',{class:'field'},el('label',{},'Fornecedor'),fornecedor));modal.appendChild(el('div',{class:'field'},el('label',{},'Responsável'),resp));modal.appendChild(el('div',{class:'field'},el('label',{},'Observação'),obs));
+  const pessoaSetor=el('input',{value:editing?.pessoaSetor||'',placeholder:'Ex: João da Produção'});
+  const resp=el('input',{value:editing?.responsavel||state.currentUser?.nome||'',placeholder:'Quem está registrando'});
+  const obs=el('textarea',{placeholder:'Observações'},editing?.observacao||'');
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Item *'),item));
+  modal.appendChild(el('div',{class:'field-row'},el('div',{class:'field'},el('label',{},'Quantidade *'),qtd),el('div',{class:'field'},el('label',{},'Data *'),data)));
+  modal.appendChild(el('div',{class:'field'},el('label',{},tipo==='saida'?'Setor que está retirando *':'Setor relacionado'),setor));
+  if(tipo==='saida') modal.appendChild(el('div',{class:'field'},el('label',{},'Pessoa do setor que está retirando *'),pessoaSetor));
+  if(tipo==='entrada')modal.appendChild(el('div',{class:'field'},el('label',{},'Fornecedor'),fornecedor));
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Registrado por'),resp));
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Observação'),obs));
   modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{
     const q=Number(qtd.value);if(!(q>0)){qtd.focus();return;}
+    if(tipo==='saida'&&!setor.value){showToast('Selecione o setor que está retirando.');setor.focus();return;}
+    if(tipo==='saida'&&!pessoaSetor.value.trim()){showToast('Informe quem está retirando o material.');pessoaSetor.focus();return;}
     const available=itemStock(item.value,editing?.id||'');if(tipo==='saida'&&q>available){showToast('Saldo insuficiente. Disponível: '+available);return;}
-    const dataObj={id:editing?.id||uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:tipo==='entrada'?(fornecedor.value||''):'',pedidoId:editing?.pedidoId||'',responsavel:resp.value.trim(),observacao:obs.value.trim()};
+    const dataObj={id:editing?.id||uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:tipo==='entrada'?(fornecedor.value||''):'',pedidoId:editing?.pedidoId||'',responsavel:resp.value.trim(),pessoaSetor:tipo==='saida'?pessoaSetor.value.trim():'',observacao:obs.value.trim()};
     if(editing) Object.assign(editing,dataObj); else state.stockMovements.push(dataObj);
+    saveStockMovementExtras();
+    state.stockMovementPage=1;
     const ok=await saveData(false);closeModal();if(ok)showToast(editing?'Movimentação atualizada.':'Movimentação registrada.');
   }},editing?'Salvar alterações':'Salvar')));return modal;
 }
+
 function renderSectorForm(){const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},'Novo setor'));const nome=el('input',{placeholder:'Ex: Manutenção'});const desc=el('textarea',{placeholder:'Descrição opcional'});modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));modal.appendChild(el('div',{class:'field'},el('label',{},'Descrição'),desc));modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{if(!nome.value.trim()){nome.focus();return;}state.sectors.push({id:uid(),nome:nome.value.trim(),descricao:desc.value.trim()});const ok=await saveData(false);closeModal();if(ok)showToast('Setor cadastrado.');}},'Salvar')));return modal;}
+
+function renderSolicitacaoCompra(){
+  const wrap=el('div',{});
+  wrap.appendChild(el('h1',{class:'page-title'},'Solicitação de compra'));
+  wrap.appendChild(el('p',{class:'page-sub'},'Informe os materiais necessários. Uma nova linha aparece automaticamente conforme você preenche a solicitação.'));
+  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'🧪'),el('div',{},el('strong',{},'Etapa de protótipo'),el('div',{},'Nesta versão, as solicitações ficam salvas neste navegador. A integração entre computadores será feita na próxima etapa do backend.'))));
+  const current=normalizeUser(state.currentUser||{});
+  const form=el('div',{class:'request-form-card'});
+  form.appendChild(el('h2',{style:'font-size:18px;'},'Nova solicitação'));
+  form.appendChild(el('div',{class:'request-meta',style:'margin-bottom:14px;'},`Solicitante: ${current.nome} · Setor: ${current.setor||'Não informado'}`));
+  const rowsContainer=el('div',{});
+  let rows=[{item:'',quantidade:'',unidade:'unidade',motivo:''}];
+  const datalist=el('datalist',{id:'request-items-list'},...state.items.map(i=>el('option',{value:i.nome},i.unidade||'')));
+  form.appendChild(datalist);
+  function ensureBlankRow(){
+    const last=rows[rows.length-1];
+    if(last&&(last.item.trim()||last.quantidade||last.motivo.trim())) rows.push({item:'',quantidade:'',unidade:'unidade',motivo:''});
+  }
+  function renderRows(){
+    rowsContainer.innerHTML='';
+    rows.forEach((row,index)=>{
+      const itemInput=el('input',{value:row.item,placeholder:'Ex: Cola branca',list:'request-items-list'});
+      const qtyInput=el('input',{type:'number',min:'0.01',step:'0.01',value:row.quantidade,placeholder:'5'});
+      const unitSelect=el('select',{},...REQUEST_UNIT_OPTIONS.map(u=>el('option',{value:u,selected:u===row.unidade?'selected':null},u)));
+      const reasonInput=el('input',{value:row.motivo,placeholder:'Explique por que o item é necessário'});
+      const sync=()=>{row.item=itemInput.value;row.quantidade=qtyInput.value;row.unidade=unitSelect.value;row.motivo=reasonInput.value;};
+      const maybeAppend=()=>{sync();if(index===rows.length-1&&row.item.trim()&&Number(row.quantidade)>0&&row.motivo.trim()){rows.push({item:'',quantidade:'',unidade:'unidade',motivo:''});renderRows();}};
+      [itemInput,qtyInput,reasonInput].forEach(input=>{input.addEventListener('input',sync);input.addEventListener('change',maybeAppend);});
+      unitSelect.addEventListener('change',()=>{row.unidade=unitSelect.value;maybeAppend();});
+      const remove=el('button',{class:'request-remove',title:'Remover linha',disabled:rows.length===1?'disabled':null,onClick:()=>{rows.splice(index,1);if(!rows.length)rows.push({item:'',quantidade:'',unidade:'unidade',motivo:''});renderRows();}},'×');
+      rowsContainer.appendChild(el('div',{class:'request-item-row'},
+        el('div',{class:'field'},el('label',{},`Item ${index+1}`),itemInput),
+        el('div',{class:'field'},el('label',{},'Quantidade'),el('div',{class:'request-qty-group'},qtyInput,unitSelect)),
+        el('div',{class:'field reason-field'},el('label',{},'Motivo'),reasonInput),
+        remove
+      ));
+    });
+  }
+  renderRows();
+  form.appendChild(rowsContainer);
+  form.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn',onClick:async()=>{
+    const valid=rows.filter(r=>r.item.trim()||r.quantidade||r.motivo.trim());
+    if(!valid.length){showToast('Preencha pelo menos um item.');return;}
+    const incomplete=valid.find(r=>!r.item.trim()||!(Number(r.quantidade)>0)||!r.motivo.trim());
+    if(incomplete){showToast('Preencha item, quantidade e motivo em todas as linhas utilizadas.');return;}
+    const now=new Date();
+    const req={id:uid(),numero:`SOL-${now.toISOString().slice(0,10).replaceAll('-','')}-${String(state.purchaseRequests.length+1).padStart(3,'0')}`,usuarioId:current.id,solicitante:current.nome,setor:current.setor||'Não informado',criadoEm:now.toISOString(),status:'Pendente',itens:valid.map(r=>({item:r.item.trim(),quantidade:Number(r.quantidade),unidade:r.unidade,motivo:r.motivo.trim()})),observacaoCompras:''};
+    state.purchaseRequests.unshift(req);
+    const ok=await savePurchaseRequests(false);
+    if(ok){rows=[{item:'',quantidade:'',unidade:'unidade',motivo:''}];renderRows();showToast('Solicitação enviada ao setor de compras.');}
+  }},'Enviar solicitação')));
+  wrap.appendChild(form);
+
+  const mine=state.purchaseRequests.filter(r=>r.usuarioId===current.id||(!r.usuarioId&&r.solicitante===current.nome)).sort((a,b)=>String(b.criadoEm).localeCompare(String(a.criadoEm)));
+  wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Minhas solicitações'));
+  if(!mine.length){wrap.appendChild(el('div',{class:'empty-state'},el('div',{class:'big'},'📭'),el('div',{},'Você ainda não enviou nenhuma solicitação.')));return wrap;}
+  mine.forEach(req=>wrap.appendChild(renderPurchaseRequestCard(req,false)));
+  return wrap;
+}
+
+function renderPurchaseRequestCard(req,manage){
+  const card=el('div',{class:'request-card'});
+  const date=req.criadoEm?new Date(req.criadoEm).toLocaleString('pt-BR'):'—';
+  card.appendChild(el('div',{class:'request-head'},
+    el('div',{},el('h3',{style:'font-size:16px;'},requestCode(req)),el('div',{class:'request-meta'},`${req.solicitante||'Usuário'} · ${req.setor||'Setor não informado'} · ${date}`)),
+    el('span',{class:'request-status '+requestStatusClass(req.status)},req.status||'Pendente')
+  ));
+  const table=el('table',{class:'request-items-table'});
+  table.appendChild(el('thead',{},el('tr',{},el('th',{},'Item'),el('th',{},'Quantidade'),el('th',{},'Motivo'))));
+  const body=el('tbody',{});
+  (req.itens||[]).forEach(i=>body.appendChild(el('tr',{},el('td',{},i.item),el('td',{},`${i.quantidade} ${i.unidade||'unidade'}`),el('td',{},i.motivo))));
+  table.appendChild(body);card.appendChild(table);
+  if(req.observacaoCompras) card.appendChild(el('div',{class:'request-note'},el('strong',{},'Observação de Compras: '),req.observacaoCompras));
+  if(manage){
+    const statusSelect=el('select',{style:'padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;'},...['Pendente','Em análise','Aprovada','Concluída','Recusada'].map(s=>el('option',{value:s,selected:s===req.status?'selected':null},s)));
+    const note=el('input',{value:req.observacaoCompras||'',placeholder:'Observação opcional para o solicitante',style:'min-width:260px;flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:7px;'});
+    card.appendChild(el('div',{class:'request-actions'},statusSelect,note,el('button',{class:'btn small',onClick:async()=>{req.status=statusSelect.value;req.observacaoCompras=note.value.trim();req.atualizadoEm=new Date().toISOString();await savePurchaseRequests(false);showToast('Solicitação atualizada.');}},'Salvar status'),el('button',{class:'btn danger-txt small',onClick:()=>askConfirm('Excluir esta solicitação?',async()=>{state.purchaseRequests=state.purchaseRequests.filter(r=>r.id!==req.id);await savePurchaseRequests(false);render();showToast('Solicitação excluída.');})},'Excluir')));
+  }
+  return card;
+}
+
+function renderSolicitacoesCompras(){
+  const wrap=el('div',{});
+  wrap.appendChild(el('h1',{class:'page-title'},'Solicitações de compras'));
+  wrap.appendChild(el('p',{class:'page-sub'},'Pedidos enviados pelos setores para análise do time de Compras e da Gerência.'));
+  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'🧪'),el('div',{},el('strong',{},'Etapa de protótipo'),el('div',{},'As solicitações desta versão são compartilhadas somente entre usuários cadastrados neste mesmo navegador.'))));
+  const pending=state.purchaseRequests.filter(r=>r.status==='Pendente').length;
+  const analysis=state.purchaseRequests.filter(r=>r.status==='Em análise').length;
+  const done=state.purchaseRequests.filter(r=>['Aprovada','Concluída'].includes(r.status)).length;
+  wrap.appendChild(el('div',{class:'stock-grid'},el('div',{class:'stock-card'},'Total de solicitações',el('strong',{},String(state.purchaseRequests.length))),el('div',{class:'stock-card'},'Pendentes',el('strong',{},String(pending))),el('div',{class:'stock-card'},'Em análise',el('strong',{},String(analysis))),el('div',{class:'stock-card'},'Aprovadas/concluídas',el('strong',{},String(done)))));
+  const filter=el('select',{style:'padding:9px 12px;border:1.5px solid var(--line);border-radius:8px;background:#fff;margin-bottom:16px;'},el('option',{value:''},'Todos os status'),...['Pendente','Em análise','Aprovada','Concluída','Recusada'].map(s=>el('option',{value:s,selected:state.requestStatusFilter===s?'selected':null},s)));
+  filter.addEventListener('change',()=>{state.requestStatusFilter=filter.value;render();});wrap.appendChild(filter);
+  let requests=state.purchaseRequests.slice().sort((a,b)=>String(b.criadoEm).localeCompare(String(a.criadoEm)));
+  if(state.requestStatusFilter) requests=requests.filter(r=>r.status===state.requestStatusFilter);
+  if(!requests.length){wrap.appendChild(el('div',{class:'empty-state'},el('div',{class:'big'},'📨'),el('div',{},state.purchaseRequests.length?'Nenhuma solicitação neste filtro.':'Nenhuma solicitação recebida ainda.')));return wrap;}
+  requests.forEach(req=>wrap.appendChild(renderPurchaseRequestCard(req,true)));
+  return wrap;
+}
+
+function openUserModal(user=null){if(!isPrivilegedUser()){showToast('Acesso restrito.');return;}state.modal={type:'user',editing:user};render();}
+function renderUsers(){
+  const wrap=el('div',{});
+  wrap.appendChild(el('h1',{class:'page-title'},'Usuários e acessos'));
+  wrap.appendChild(el('p',{class:'page-sub'},'Cadastre acessos de Compras, Gerência ou dos demais setores.'));
+  wrap.appendChild(el('div',{class:'toolbar'},el('span',{style:'color:var(--ink-soft);font-size:13px;'},`${state.users.length} usuário(s) cadastrado(s)`),el('button',{class:'btn',onClick:()=>openUserModal()},'+ Novo usuário')));
+  const card=el('div',{class:'users-card'});
+  if(!state.users.length){card.appendChild(el('div',{class:'dash-empty'},'Nenhum usuário cadastrado.'));wrap.appendChild(card);return wrap;}
+  state.users.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(u=>{
+    const normalized=normalizeUser(u);const roleClass=normalized.role==='gerencia'?'gerencia':normalized.role==='setor'?'setor':'';
+    card.appendChild(el('div',{class:'user-list-row'},
+      el('div',{class:'user-name-wrap'},el('div',{class:'user-avatar'},initials(normalized.nome)),el('div',{},el('div',{style:'font-weight:700;'},normalized.nome),el('div',{class:'user-sector'},normalized.setor||'Acesso geral'))),
+      el('div',{},el('span',{class:'role-badge '+roleClass},roleLabel(normalized))),
+      el('div',{class:'user-sector'},normalized.senha?'Senha cadastrada':'Sem senha'),
+      el('div',{class:'stock-inline-actions'},el('button',{class:'btn secondary small',onClick:()=>openUserModal(u)},'Editar'),el('button',{class:'btn danger-txt small',disabled:normalized.id===state.currentUser?.id?'disabled':null,onClick:()=>{if(normalized.id===state.currentUser?.id)return;askConfirm('Excluir este usuário?',async()=>{state.users=state.users.filter(x=>x.id!==normalized.id);await saveUsers();render();showToast('Usuário excluído.');});}},'Excluir'))
+    ));
+  });
+  wrap.appendChild(card);return wrap;
+}
+
+function renderUserForm(){
+  const editing=state.modal.editing||null;const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},editing?'Editar usuário':'Novo usuário'));
+  const nome=el('input',{value:editing?.nome||'',placeholder:'Nome completo'});
+  const senha=el('input',{type:'password',value:editing?.senha||'',placeholder:'Senha de acesso'});
+  const role=el('select',{},el('option',{value:'compras',selected:(editing?.role||'compras')==='compras'?'selected':null},'Compras — acesso a todas as telas'),el('option',{value:'gerencia',selected:editing?.role==='gerencia'?'selected':null},'Gerência — acesso a todas as telas'),el('option',{value:'setor',selected:editing?.role==='setor'?'selected':null},'Demais setores — estoque e solicitações'));
+  const sectorWrap=el('div',{class:'field'});const sector=el('input',{value:editing?.setor||'',placeholder:'Ex: Qualidade',list:'department-list'});sectorWrap.appendChild(el('label',{},'Setor *'));sectorWrap.appendChild(sector);sectorWrap.appendChild(el('datalist',{id:'department-list'},...DEFAULT_DEPARTMENTS.map(s=>el('option',{value:s}))));
+  const updateSectorVisibility=()=>{sectorWrap.style.display=role.value==='setor'?'block':'none';};role.addEventListener('change',updateSectorVisibility);updateSectorVisibility();
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));modal.appendChild(el('div',{class:'field'},el('label',{},'Perfil de acesso *'),role));modal.appendChild(sectorWrap);modal.appendChild(el('div',{class:'field'},el('label',{},'Senha'),senha));
+  modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{
+    const n=nome.value.trim();if(!n){nome.focus();return;}if(role.value==='setor'&&!sector.value.trim()){showToast('Informe o setor do usuário.');sector.focus();return;}
+    if(state.users.some(u=>u.id!==editing?.id&&u.nome.toLowerCase()===n.toLowerCase())){showToast('Já existe um usuário com esse nome.');return;}
+    const data={id:editing?.id||uid(),nome:n,senha:senha.value,role:role.value,setor:role.value==='setor'?sector.value.trim():''};
+    if(editing){Object.assign(editing,data);if(state.currentUser?.id===editing.id)state.currentUser=editing;}else state.users.push(data);
+    await saveUsers();closeModal();showToast(editing?'Usuário atualizado.':'Usuário cadastrado.');
+  }},'Salvar usuário')));return modal;
+}
 
 function renderModal(){
   if(state.modal && state.modal.type === 'profile'){
@@ -2613,7 +2867,7 @@ function renderModal(){
           el('div', {class:'user-avatar', style:'width:44px;height:44px;font-size:15px;'}, initials(u.nome || 'Usuário')),
           el('div', {},
             el('div', {style:'font-size:16px;font-weight:700;'}, u.nome || 'Usuário'),
-            el('div', {class:'fornecedor-sub'}, 'Usuário conectado')
+            el('div', {class:'fornecedor-sub'}, isSectorUser()?`${roleLabel(u)} · ${normalizeUser(u).setor}`:roleLabel(u))
           )
         ),
         el('div', {class:'field'},
@@ -2638,6 +2892,7 @@ function renderModal(){
   else if(state.modal.type === 'offer') content = renderOfferForm();
   else if(state.modal.type === 'history') content = renderHistoryModal();
   else if(state.modal.type === 'order') content = renderOrderForm();
+  else if(state.modal.type === 'user') content = renderUserForm();
   overlay.appendChild(content);
   return overlay;
 }
@@ -3169,86 +3424,33 @@ function initials(nome){
 function renderLoginScreen(){
   const wrap = el('div', {class:'login-wrap'});
   const card = el('div', {class:'login-card'});
-
   card.appendChild(el('p', {class:'login-brand'}, 'Meggs Supply'));
 
   if(state.loginMode === 'password' && state.loginTarget){
-    const user = state.loginTarget;
+    const user = normalizeUser(state.loginTarget);
     card.appendChild(el('p', {class:'login-sub'}, `Digite a senha de ${user.nome}`));
+    card.appendChild(el('div',{class:'login-role-note'},el('span',{},roleLabel(user)),user.setor?el('strong',{},user.setor):null));
     if(state.loginError) card.appendChild(el('div', {class:'login-error'}, state.loginError));
     const pwField = el('div', {class:'field'}, el('label',{},'Senha'), el('input', {type:'password', placeholder:'••••••'}));
-    const pwInput = pwField.querySelector('input');
-    card.appendChild(pwField);
-    const doLogin = ()=>{
-      if(pwInput.value === user.senha){
-        state.currentUser = user;
-        state.loginMode = 'select';
-        state.loginTarget = null;
-        state.loginError = '';
-        render();
-      } else {
-        state.loginError = 'Senha incorreta. Tente novamente.';
-        render();
-      }
-    };
+    const pwInput = pwField.querySelector('input');card.appendChild(pwField);
+    const doLogin = ()=>{if(pwInput.value === user.senha){state.currentUser = user;state.view=defaultViewForUser();state.loginMode = 'select';state.loginTarget = null;state.loginError = '';render();}else{state.loginError = 'Senha incorreta. Tente novamente.';render();}};
     pwInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},
-      el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginTarget=null; state.loginError=''; render(); }}, 'Voltar'),
-      el('button', {class:'btn', onClick: doLogin}, 'Entrar')
-    ));
+    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginTarget=null; state.loginError=''; render(); }}, 'Voltar'),el('button', {class:'btn', onClick: doLogin}, 'Entrar')));
     setTimeout(()=>pwInput.focus(), 0);
-  } else if(state.loginMode === 'new'){
-    card.appendChild(el('p', {class:'login-sub'}, 'Criar novo usuário'));
-    const nomeField = el('div', {class:'field'}, el('label',{},'Nome *'), el('input', {placeholder:'Ex: Ana Souza'}));
-    const senhaField = el('div', {class:'field'}, el('label',{},'Senha (opcional)'), el('input', {type:'password', placeholder:'Deixe em branco para não usar senha'}));
-    const nomeInput = nomeField.querySelector('input');
-    const senhaInput = senhaField.querySelector('input');
-    card.appendChild(nomeField);
-    card.appendChild(senhaField);
+  } else if(state.loginMode === 'new' && state.users.length===0){
+    card.appendChild(el('p', {class:'login-sub'}, 'Criar o primeiro acesso de Compras'));
+    const nomeField = el('div', {class:'field'}, el('label',{},'Nome *'), el('input', {placeholder:'Ex: Matheus'}));
+    const senhaField = el('div', {class:'field'}, el('label',{},'Senha'), el('input', {type:'password', placeholder:'Crie uma senha de acesso'}));
+    const nomeInput = nomeField.querySelector('input');const senhaInput = senhaField.querySelector('input');card.appendChild(nomeField);card.appendChild(senhaField);
     if(state.loginError) card.appendChild(el('div', {class:'login-error'}, state.loginError));
-    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},
-      el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginError=''; render(); }}, 'Voltar'),
-      el('button', {class:'btn', onClick: async ()=>{
-        const nome = nomeInput.value.trim();
-        if(!nome){ nomeInput.focus(); return; }
-        if(state.users.some(u=>u.nome.toLowerCase()===nome.toLowerCase())){
-          state.loginError = 'Já existe um usuário com esse nome.';
-          render();
-          return;
-        }
-        const user = { id: uid(), nome, senha: senhaInput.value };
-        state.users.push(user);
-        await saveUsers();
-        state.currentUser = user;
-        state.loginMode = 'select';
-        state.loginError = '';
-        render();
-      }}, 'Criar e entrar')
-    ));
+    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginError=''; render(); }}, 'Voltar'),el('button', {class:'btn', onClick: async ()=>{const nome = nomeInput.value.trim();if(!nome){ nomeInput.focus(); return; }const user = { id: uid(), nome, senha: senhaInput.value, role:'compras', setor:'' };state.users.push(user);await saveUsers();state.currentUser = user;state.view='dashboard';state.loginMode = 'select';state.loginError = '';render();}}, 'Criar e entrar')));
   } else {
-    card.appendChild(el('p', {class:'login-sub'}, state.users.length ? 'Selecione seu usuário para continuar' : 'Crie o primeiro usuário para começar'));
-    state.users.forEach(u=>{
-      card.appendChild(el('button', {class:'user-tile', onClick:()=>{
-        if(u.senha){
-          state.loginMode = 'password';
-          state.loginTarget = u;
-          state.loginError = '';
-        } else {
-          state.currentUser = u;
-        }
-        render();
-      }},
-        el('div', {class:'user-avatar'}, initials(u.nome)),
-        el('div', {class:'user-tile-name'}, u.nome)
-      ));
-    });
-    card.appendChild(el('div', {class:'login-link-row'},
-      el('button', {class:'login-link', onClick:()=>{ state.loginMode='new'; state.loginError=''; render(); }}, '+ Criar novo usuário')
-    ));
+    card.appendChild(el('p', {class:'login-sub'}, state.users.length ? 'Selecione seu usuário para continuar' : 'Crie o primeiro usuário de Compras para começar'));
+    state.users.forEach(raw=>{const u=normalizeUser(raw);const roleClass=u.role==='gerencia'?'gerencia':u.role==='setor'?'setor':'';card.appendChild(el('button', {class:'user-tile', onClick:()=>{if(u.senha){state.loginMode = 'password';state.loginTarget = u;state.loginError = '';}else{state.currentUser = u;state.view=defaultViewForUser();}render();}},el('div', {class:'user-avatar'}, initials(u.nome)),el('div', {style:'flex:1;'},el('div',{class:'user-tile-name'},u.nome),el('div',{class:'user-sector'},u.setor||roleLabel(u))),el('span',{class:'role-badge '+roleClass},roleLabel(u))));});
+    if(!state.users.length) card.appendChild(el('div', {class:'login-link-row'},el('button', {class:'login-link', onClick:()=>{ state.loginMode='new'; state.loginError=''; render(); }}, '+ Criar primeiro usuário')));
+    else card.appendChild(el('div',{class:'login-link-row',style:'font-size:11px;color:var(--ink-soft);'},'Novos usuários são cadastrados em “Usuários e acessos”.'));
   }
-
-  wrap.appendChild(card);
-  return wrap;
+  wrap.appendChild(card);return wrap;
 }
 
 /* ---------------- Root render ---------------- */
@@ -3266,6 +3468,8 @@ function render(){
     root.appendChild(renderLoginScreen());
     return;
   }
+
+  if(!canAccessView(state.view)) state.view=defaultViewForUser();
 
   const app = el('div', {class:'app'});
   app.appendChild(renderSidebar());
@@ -3289,6 +3493,12 @@ function render(){
     main.appendChild(renderPedidos());
   } else if(state.view === 'estoque'){
     main.appendChild(renderEstoque());
+  } else if(state.view === 'solicitacao'){
+    main.appendChild(renderSolicitacaoCompra());
+  } else if(state.view === 'solicitacoes'){
+    main.appendChild(renderSolicitacoesCompras());
+  } else if(state.view === 'usuarios'){
+    main.appendChild(renderUsers());
   } else if(state.view === 'cotacao'){
     main.appendChild(renderCotacao());
   } else if(state.view === 'segmentos'){
