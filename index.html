@@ -819,9 +819,9 @@ let state = {
   modal: null, // {type: 'supplier'|'item'|'offer'|'order'|'history', editing: obj|null}
   confirmDialog: null, // {message, onConfirm}
   toast: null,
-  loginMode: 'select', // 'select' | 'new' | 'password'
-  loginTarget: null, // user selected awaiting password
   loginError: '',
+  loginEmail: '',
+  authBusy: false,
 };
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0,v=c==='x'?r:(r&3|8);return v.toString(16);}); }
@@ -834,19 +834,42 @@ const USER_ROLE_LABELS = {compras:'Compras', gerencia:'Gerência', setor:'Demais
 const DEFAULT_DEPARTMENTS = ['Qualidade', 'Financeiro', 'Logística', 'Produção'];
 
 function normalizeUser(user){
-  const role=['compras','gerencia','setor'].includes(user?.role)?user.role:'compras';
-  return {...user, role, setor:role==='setor'?(user?.setor||'Outros'):''};
+  const roleValue = user?.role || user?.perfil;
+  const role=['compras','gerencia','setor'].includes(roleValue)?roleValue:'setor';
+  const setorNome = typeof user?.setor === 'string'
+    ? user.setor
+    : (user?.setor?.nome || user?.setores?.nome || '');
+  return {
+    ...user,
+    role,
+    perfil: role,
+    setorId: user?.setorId || user?.setor_id || '',
+    setor: role==='setor' ? (setorNome || 'Não informado') : '',
+    ativo: user?.ativo !== false
+  };
 }
 function currentRole(){ return normalizeUser(state.currentUser||{}).role; }
 function isPrivilegedUser(){ return currentRole()==='compras' || currentRole()==='gerencia'; }
 function isSectorUser(){ return currentRole()==='setor'; }
-function roleLabel(user){ return USER_ROLE_LABELS[normalizeUser(user||{}).role] || 'Compras'; }
+function roleLabel(user){ return USER_ROLE_LABELS[normalizeUser(user||{}).role] || 'Demais setores'; }
 function canAccessView(view){ return isPrivilegedUser() || ['estoque','solicitacao'].includes(view); }
 function defaultViewForUser(){ return isSectorUser()?'estoque':'dashboard'; }
 function requestStatusClass(status){
   return ({'Pendente':'pendente','Em análise':'analise','Aprovada':'aprovada','Concluída':'concluida','Recusada':'recusada'})[status]||'pendente';
 }
-function requestCode(req){ return req.numero || `SOL-${String(req.criadoEm||'').slice(0,10).replaceAll('-','')}-${String((state.purchaseRequests.indexOf(req)+1)||1).padStart(3,'0')}`; }
+function requestCode(req){ return req.numero || `SOL-${String(req.criadoEm||'').slice(0,10).replaceAll('-','')}`; }
+function mapProfileFromDb(profile, authUser=null){
+  return normalizeUser({
+    id: profile.id,
+    email: profile.email || authUser?.email || '',
+    nome: profile.nome || authUser?.email || 'Usuário',
+    role: profile.perfil,
+    setorId: profile.setor_id || '',
+    setor: profile.setor?.nome || profile.setores?.nome || '',
+    ativo: profile.ativo,
+    criadoEm: profile.criado_em || ''
+  });
+}
 
 
 // Componente reutilizável: linha de chips de seleção única (clicar escolhe, clicar de novo desmarca)
@@ -933,128 +956,199 @@ function saveStockMovementExtras(){
     return true;
   }catch(e){console.error('Erro ao salvar detalhes locais do estoque:',e);return false;}
 }
-async function loadPurchaseRequests(){
-  try{state.purchaseRequests=JSON.parse(localStorage.getItem(PURCHASE_REQUESTS_KEY)||'[]')||[];}catch(e){state.purchaseRequests=[];}
+
+async function loadCurrentProfile(authUser){
+  const {data, error} = await supabaseClient
+    .from('perfis_usuarios')
+    .select('id,email,nome,perfil,setor_id,ativo,criado_em,setor:setores(nome)')
+    .eq('id', authUser.id)
+    .single();
+  if(error?.code==='PGRST116') throw new Error('Seu usuário foi criado no Authentication, mas o perfil ainda não foi configurado em perfis_usuarios.');
+  dbError(error);
+  if(!data?.ativo) throw new Error('Este usuário está desativado. Fale com o setor de Compras ou com a Gerência.');
+  return mapProfileFromDb(data, authUser);
 }
-async function savePurchaseRequests(shouldRender=true){
-  try{
-    localStorage.setItem(PURCHASE_REQUESTS_KEY,JSON.stringify(state.purchaseRequests));
-    if(shouldRender) render();
-    return true;
-  }catch(e){console.error('Erro ao salvar solicitações:',e);showToast('⚠️ Não foi possível salvar a solicitação neste navegador.');return false;}
+
+async function loadUsers(){
+  if(!state.currentUser){ state.users=[]; return; }
+  if(!isPrivilegedUser()){ state.users=[state.currentUser]; return; }
+  const {data,error}=await supabaseClient
+    .from('perfis_usuarios')
+    .select('id,email,nome,perfil,setor_id,ativo,criado_em,setor:setores(nome)')
+    .order('nome');
+  dbError(error);
+  state.users=(data||[]).map(row=>mapProfileFromDb(row));
+}
+
+async function loadPurchaseRequests(){
+  if(!state.currentUser){ state.purchaseRequests=[]; return; }
+  const {data,error}=await supabaseClient
+    .from('solicitacoes_compra')
+    .select('id,numero,solicitante_id,setor_id,solicitante_nome,setor_nome,status,observacao_compras,criado_em,atualizado_em,itens:solicitacao_compra_itens(id,item_id,item_descricao,quantidade,unidade,motivo,ordem)')
+    .order('criado_em',{ascending:false});
+  dbError(error);
+  state.purchaseRequests=(data||[]).map(r=>({
+    id:r.id,
+    numero:r.numero,
+    usuarioId:r.solicitante_id,
+    setorId:r.setor_id||'',
+    solicitante:r.solicitante_nome||'Usuário',
+    setor:r.setor_nome||'Não informado',
+    status:r.status||'Pendente',
+    observacaoCompras:r.observacao_compras||'',
+    criadoEm:r.criado_em,
+    atualizadoEm:r.atualizado_em,
+    itens:(r.itens||[]).slice().sort((a,b)=>(a.ordem||0)-(b.ordem||0)).map(i=>({
+      id:i.id,
+      itemId:i.item_id||'',
+      item:i.item_descricao,
+      quantidade:Number(i.quantidade||0),
+      unidade:i.unidade||'unidade',
+      motivo:i.motivo||''
+    }))
+  }));
 }
 
 async function loadData(){
   const stockExtras=loadStockExtras();
   try{
-    const [
-      fornecedoresRes,
-      itensRes,
-      ofertasRes,
-      historicoRes,
-      pedidosRes,
-      pedidoItensRes,
-      setoresRes,
-      movimentosRes
-    ] = await Promise.all([
+    const commonQueries = [
       supabaseClient.from('fornecedores').select('*').order('nome'),
       supabaseClient.from('itens').select('*').order('nome'),
-      supabaseClient.from('ofertas').select('*'),
-      supabaseClient.from('historico_precos').select('*').order('registrado_em'),
-      supabaseClient.from('pedidos').select('*').order('criado_em', {ascending:false}),
-      supabaseClient.from('pedido_itens').select('*'),
       supabaseClient.from('setores').select('*').order('nome'),
       supabaseClient.from('movimentacoes_estoque').select('*').order('data_movimentacao', {ascending:false})
-    ]);
+    ];
+    const [fornecedoresRes,itensRes,setoresRes,movimentosRes]=await Promise.all(commonQueries);
+    [fornecedoresRes,itensRes,setoresRes,movimentosRes].forEach(r=>dbError(r.error));
 
-    [fornecedoresRes, itensRes, ofertasRes, historicoRes, pedidosRes, pedidoItensRes, setoresRes, movimentosRes]
-      .forEach(r => dbError(r.error));
-
-    state.suppliers = (fornecedoresRes.data || []).map(mapSupplierFromDb);
-    state.items = (itensRes.data || []).map(mapItemFromDb);
-    state.sectors = (setoresRes.data || []).map(s => ({id:s.id, nome:s.nome || '', descricao:s.descricao || ''}));
-    state.stockMovements = (movimentosRes.data || []).map(m => ({
+    state.suppliers=(fornecedoresRes.data||[]).map(mapSupplierFromDb);
+    state.items=(itensRes.data||[]).map(mapItemFromDb);
+    state.sectors=(setoresRes.data||[]).map(s=>({id:s.id,nome:s.nome||'',descricao:s.descricao||''}));
+    state.stockMovements=(movimentosRes.data||[]).map(m=>({
       id:m.id,
       itemId:m.item_id,
       tipo:m.tipo,
-      quantidade:Number(m.quantidade || 0),
+      quantidade:Number(m.quantidade||0),
       data:m.data_movimentacao,
-      setorId:m.setor_id || '',
-      supplierId:m.fornecedor_id || '',
-      pedidoId:m.pedido_id || '',
-      responsavel:m.responsavel || '',
-      pessoaSetor:stockExtras[m.id]?.pessoaSetor || '',
-      observacao:m.observacao || ''
+      setorId:m.setor_id||'',
+      supplierId:m.fornecedor_id||'',
+      pedidoId:m.pedido_id||'',
+      responsavel:m.responsavel||'',
+      pessoaSetor:m.pessoa_setor||stockExtras[m.id]?.pessoaSetor||'',
+      registradoPorId:m.registrado_por_id||'',
+      observacao:m.observacao||''
     }));
 
-    const historyByOffer = {};
-    (historicoRes.data || []).forEach(h => {
-      (historyByOffer[h.oferta_id] ||= []).push({preco:Number(h.preco), data:(h.registrado_em || '').slice(0,10)});
-    });
+    if(isPrivilegedUser()){
+      const [ofertasRes,historicoRes,pedidosRes,pedidoItensRes]=await Promise.all([
+        supabaseClient.from('ofertas').select('*'),
+        supabaseClient.from('historico_precos').select('*').order('registrado_em'),
+        supabaseClient.from('pedidos').select('*').order('criado_em',{ascending:false}),
+        supabaseClient.from('pedido_itens').select('*')
+      ]);
+      [ofertasRes,historicoRes,pedidosRes,pedidoItensRes].forEach(r=>dbError(r.error));
 
-    state.offers = (ofertasRes.data || []).map(o => ({
-      id:o.id, itemId:o.item_id, supplierId:o.fornecedor_id, preco:Number(o.preco),
-      dataAtualizacao:o.data_atualizacao, obs:o.observacao || '',
-      historico:historyByOffer[o.id] || [{preco:Number(o.preco), data:o.data_atualizacao}]
-    }));
+      const historyByOffer={};
+      (historicoRes.data||[]).forEach(h=>{(historyByOffer[h.oferta_id]||=[]).push({preco:Number(h.preco),data:(h.registrado_em||'').slice(0,10)});});
+      state.offers=(ofertasRes.data||[]).map(o=>({
+        id:o.id,itemId:o.item_id,supplierId:o.fornecedor_id,preco:Number(o.preco),
+        dataAtualizacao:o.data_atualizacao,obs:o.observacao||'',
+        historico:historyByOffer[o.id]||[{preco:Number(o.preco),data:o.data_atualizacao}]
+      }));
 
-    const orderItemsByOrder = {};
-    (pedidoItensRes.data || []).forEach(pi => {
-      (orderItemsByOrder[pi.pedido_id] ||= []).push({
-        itemId:pi.item_id, quantidade:Number(pi.quantidade), precoUnit:Number(pi.preco_unitario),
-        fornecedorId:pi.fornecedor_id, ultimoPreco:pi.ultimo_preco === null ? null : Number(pi.ultimo_preco),
-        prazoEntrega:pi.prazo_entrega || '', formaPagamento:pi.forma_pagamento || '',
-        justificativa:pi.justificativa || '', observacao:pi.observacao || ''
+      const orderItemsByOrder={};
+      (pedidoItensRes.data||[]).forEach(pi=>{
+        (orderItemsByOrder[pi.pedido_id]||=[]).push({
+          itemId:pi.item_id,quantidade:Number(pi.quantidade),precoUnit:Number(pi.preco_unitario),
+          fornecedorId:pi.fornecedor_id,ultimoPreco:pi.ultimo_preco===null?null:Number(pi.ultimo_preco),
+          prazoEntrega:pi.prazo_entrega||'',formaPagamento:pi.forma_pagamento||'',
+          justificativa:pi.justificativa||'',observacao:pi.observacao||''
+        });
       });
-    });
+      state.orders=(pedidosRes.data||[]).map(p=>{
+        const itens=orderItemsByOrder[p.id]||[];
+        return {
+          id:p.id,numero:p.numero,supplierId:itens[0]?.fornecedorId||null,
+          data:(p.criado_em||'').slice(0,10),criadoEm:p.criado_em,
+          comprador:p.comprador||'',status:p.status||'Aguardando Confirmação',
+          cotacaoOrigem:p.cotacao_origem||'',itens,observacao:p.observacao||''
+        };
+      });
+    }else{
+      state.offers=[];
+      state.orders=[];
+    }
 
-    state.orders = (pedidosRes.data || []).map(p => {
-      const itens = orderItemsByOrder[p.id] || [];
-      return {
-        id:p.id, numero:p.numero, supplierId:itens[0]?.fornecedorId || null,
-        data:(p.criado_em || '').slice(0,10), criadoEm:p.criado_em,
-        comprador:p.comprador || '', status:p.status || 'Aguardando Confirmação',
-        cotacaoOrigem:p.cotacao_origem || '', itens, observacao:p.observacao || ''
-      };
-    });
-  } catch(e){
-    console.error('Erro ao carregar dados do Supabase:', e);
-    state.saveError = true;
-    state.suppliers = []; state.items = []; state.offers = []; state.orders = [];
-    state.sectors = []; state.stockMovements = [];
+    await Promise.all([loadUsers(),loadPurchaseRequests()]);
+    state.saveError=false;
+  }catch(e){
+    console.error('Erro ao carregar dados do Supabase:',e);
+    state.saveError=true;
+    state.suppliers=[];state.items=[];state.offers=[];state.orders=[];
+    state.sectors=[];state.stockMovements=[];state.purchaseRequests=[];
+    state.loginError='Não foi possível carregar os dados: '+(e?.message||String(e));
   }
-  await loadUsers();
-  await loadPurchaseRequests();
-  state.loaded = true;
+  state.loaded=true;
   render();
 }
 
-async function loadUsers(){
+async function authenticate(email,password){
+  state.authBusy=true;
+  state.loginError='';
+  render();
   try{
-    state.users = (JSON.parse(localStorage.getItem(USERS_KEY) || '[]')||[]).map(normalizeUser);
-    localStorage.setItem(USERS_KEY, JSON.stringify(state.users));
-  } catch(e){
-    state.users = [];
+    const {data,error}=await supabaseClient.auth.signInWithPassword({email:email.trim(),password});
+    dbError(error);
+    state.currentUser=await loadCurrentProfile(data.user);
+    state.view=defaultViewForUser();
+    state.loaded=false;
+    await loadData();
+  }catch(e){
+    console.error('Erro de login:',e);
+    state.currentUser=null;
+    state.loaded=true;
+    const msg=String(e?.message||e||'');
+    state.loginError=/invalid login credentials/i.test(msg)
+      ? 'E-mail ou senha incorretos.'
+      : (/email not confirmed/i.test(msg)?'Este e-mail ainda não foi confirmado no Supabase.':msg);
+    render();
+  }finally{
+    state.authBusy=false;
+    if(!state.currentUser) render();
   }
 }
 
-async function saveUsers(){
+async function initializeApp(){
+  state.loaded=false;
+  render();
   try{
-    localStorage.setItem(USERS_KEY, JSON.stringify(state.users));
-    return true;
-  } catch(e){
-    console.error('Erro ao salvar usuários locais:', e);
-    showToast('⚠️ Não foi possível salvar o usuário neste navegador.');
-    return false;
+    const {data,error}=await supabaseClient.auth.getSession();
+    dbError(error);
+    if(data.session?.user){
+      state.currentUser=await loadCurrentProfile(data.session.user);
+      state.view=defaultViewForUser();
+      await loadData();
+    }else{
+      state.loaded=true;
+      render();
+    }
+  }catch(e){
+    console.error('Erro ao iniciar sessão:',e);
+    await supabaseClient.auth.signOut().catch(()=>{});
+    state.currentUser=null;
+    state.loaded=true;
+    state.loginError=e?.message||'Não foi possível iniciar a sessão.';
+    render();
   }
 }
 
-function logout(){
-  state.currentUser = null;
-  state.view = 'dashboard';
-  state.loginMode = 'select';
-  state.loginTarget = null;
-  state.loginError = '';
+async function logout(){
+  await supabaseClient.auth.signOut();
+  state.currentUser=null;
+  state.users=[];
+  state.purchaseRequests=[];
+  state.view='dashboard';
+  state.loginError='';
   render();
 }
 
@@ -1064,7 +1158,7 @@ async function saveData(shouldRender = true){
     const itemRows = state.items.map(i => ({id:i.id,nome:i.nome,categoria:i.categoria||null,unidade:i.unidade||null,ca:i.ca||null,estoque_minimo:Number(i.estoqueMinimo||0)}));
     const offerRows = state.offers.map(o => ({id:o.id,item_id:o.itemId,fornecedor_id:o.supplierId,preco:Number(o.preco)||0,data_atualizacao:o.dataAtualizacao||new Date().toISOString().slice(0,10),observacao:o.obs||null}));
     const sectorRows = state.sectors.map(s => ({id:s.id,nome:s.nome,descricao:s.descricao||null}));
-    const movementRows = state.stockMovements.map(m => ({id:m.id,item_id:m.itemId,tipo:m.tipo,quantidade:Number(m.quantidade)||0,data_movimentacao:m.data||new Date().toISOString().slice(0,10),setor_id:m.setorId||null,fornecedor_id:m.supplierId||null,pedido_id:m.pedidoId||null,responsavel:m.responsavel||null,observacao:m.observacao||null}));
+    const movementRows = state.stockMovements.map(m => ({id:m.id,item_id:m.itemId,tipo:m.tipo,quantidade:Number(m.quantidade)||0,data_movimentacao:m.data||new Date().toISOString().slice(0,10),setor_id:m.setorId||null,fornecedor_id:m.supplierId||null,pedido_id:m.pedidoId||null,responsavel:m.responsavel||null,pessoa_setor:m.pessoaSetor||null,registrado_por_id:m.registradoPorId||null,observacao:m.observacao||null}));
     const pedidoRows = state.orders.map((o,index)=>({id:o.id,numero:o.numero||`PED-${(o.data||new Date().toISOString().slice(0,10)).replaceAll('-','')}-${String(index+1).padStart(3,'0')}`,cotacao_origem:o.cotacaoOrigem||null,comprador:o.comprador||state.currentUser?.nome||'Sistema',status:o.status||'Aguardando Confirmação',observacao:o.observacao||null,valor_total:orderTotal(o),criado_em:o.criadoEm||((o.data||new Date().toISOString().slice(0,10))+'T12:00:00')}));
 
     for(const [table,rows] of [['fornecedores',supplierRows],['itens',itemRows],['ofertas',offerRows],['setores',sectorRows],['pedidos',pedidoRows],['movimentacoes_estoque',movementRows]]){
@@ -2712,7 +2806,7 @@ function renderStockMovementForm(){
     if(tipo==='saida'&&!setor.value){showToast('Selecione o setor que está retirando.');setor.focus();return;}
     if(tipo==='saida'&&!pessoaSetor.value.trim()){showToast('Informe quem está retirando o material.');pessoaSetor.focus();return;}
     const available=itemStock(item.value,editing?.id||'');if(tipo==='saida'&&q>available){showToast('Saldo insuficiente. Disponível: '+available);return;}
-    const dataObj={id:editing?.id||uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:tipo==='entrada'?(fornecedor.value||''):'',pedidoId:editing?.pedidoId||'',responsavel:resp.value.trim(),pessoaSetor:tipo==='saida'?pessoaSetor.value.trim():'',observacao:obs.value.trim()};
+    const dataObj={id:editing?.id||uid(),itemId:item.value,tipo,quantidade:q,data:data.value,setorId:setor.value,supplierId:tipo==='entrada'?(fornecedor.value||''):'',pedidoId:editing?.pedidoId||'',responsavel:resp.value.trim()||state.currentUser?.nome||'',pessoaSetor:tipo==='saida'?pessoaSetor.value.trim():'',registradoPorId:editing?.registradoPorId||state.currentUser?.id||'',observacao:obs.value.trim()};
     if(editing) Object.assign(editing,dataObj); else state.stockMovements.push(dataObj);
     saveStockMovementExtras();
     state.stockMovementPage=1;
@@ -2722,11 +2816,59 @@ function renderStockMovementForm(){
 
 function renderSectorForm(){const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},'Novo setor'));const nome=el('input',{placeholder:'Ex: Manutenção'});const desc=el('textarea',{placeholder:'Descrição opcional'});modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));modal.appendChild(el('div',{class:'field'},el('label',{},'Descrição'),desc));modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{if(!nome.value.trim()){nome.focus();return;}state.sectors.push({id:uid(),nome:nome.value.trim(),descricao:desc.value.trim()});const ok=await saveData(false);closeModal();if(ok)showToast('Setor cadastrado.');}},'Salvar')));return modal;}
 
+async function createPurchaseRequest(validRows){
+  const current=normalizeUser(state.currentUser||{});
+  const {data:request,error:requestError}=await supabaseClient
+    .from('solicitacoes_compra')
+    .insert({
+      solicitante_id:current.id,
+      setor_id:current.setorId||null,
+      solicitante_nome:current.nome,
+      setor_nome:current.setor||'Não informado',
+      status:'Pendente'
+    })
+    .select('id,numero')
+    .single();
+  dbError(requestError);
+
+  const itemRows=validRows.map((r,index)=>{
+    const registered=state.items.find(i=>i.nome.trim().toLowerCase()===r.item.trim().toLowerCase());
+    return {
+      solicitacao_id:request.id,
+      item_id:registered?.id||null,
+      item_descricao:r.item.trim(),
+      quantidade:Number(r.quantidade),
+      unidade:r.unidade,
+      motivo:r.motivo.trim(),
+      ordem:index+1
+    };
+  });
+  const {error:itemsError}=await supabaseClient.from('solicitacao_compra_itens').insert(itemRows);
+  dbError(itemsError);
+  await loadPurchaseRequests();
+  return request;
+}
+
+async function updatePurchaseRequest(req,status,observacao){
+  const {error}=await supabaseClient
+    .from('solicitacoes_compra')
+    .update({status,observacao_compras:observacao||null})
+    .eq('id',req.id);
+  dbError(error);
+  await loadPurchaseRequests();
+}
+
+async function deletePurchaseRequest(req){
+  const {error}=await supabaseClient.from('solicitacoes_compra').delete().eq('id',req.id);
+  dbError(error);
+  await loadPurchaseRequests();
+}
+
 function renderSolicitacaoCompra(){
   const wrap=el('div',{});
   wrap.appendChild(el('h1',{class:'page-title'},'Solicitação de compra'));
   wrap.appendChild(el('p',{class:'page-sub'},'Informe os materiais necessários. Uma nova linha aparece automaticamente conforme você preenche a solicitação.'));
-  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'🧪'),el('div',{},el('strong',{},'Etapa de protótipo'),el('div',{},'Nesta versão, as solicitações ficam salvas neste navegador. A integração entre computadores será feita na próxima etapa do backend.'))));
+  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'☁️'),el('div',{},el('strong',{},'Conectado ao Supabase'),el('div',{},'As solicitações ficam salvas no backend e podem ser acompanhadas em qualquer computador autorizado.'))));
   const current=normalizeUser(state.currentUser||{});
   const form=el('div',{class:'request-form-card'});
   form.appendChild(el('h2',{style:'font-size:18px;'},'Nova solicitação'));
@@ -2735,10 +2877,6 @@ function renderSolicitacaoCompra(){
   let rows=[{item:'',quantidade:'',unidade:'unidade',motivo:''}];
   const datalist=el('datalist',{id:'request-items-list'},...state.items.map(i=>el('option',{value:i.nome},i.unidade||'')));
   form.appendChild(datalist);
-  function ensureBlankRow(){
-    const last=rows[rows.length-1];
-    if(last&&(last.item.trim()||last.quantidade||last.motivo.trim())) rows.push({item:'',quantidade:'',unidade:'unidade',motivo:''});
-  }
   function renderRows(){
     rowsContainer.innerHTML='';
     rows.forEach((row,index)=>{
@@ -2761,20 +2899,22 @@ function renderSolicitacaoCompra(){
   }
   renderRows();
   form.appendChild(rowsContainer);
-  form.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn',onClick:async()=>{
+  form.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn',onClick:async(e)=>{
+    const button=e.currentTarget;
     const valid=rows.filter(r=>r.item.trim()||r.quantidade||r.motivo.trim());
     if(!valid.length){showToast('Preencha pelo menos um item.');return;}
     const incomplete=valid.find(r=>!r.item.trim()||!(Number(r.quantidade)>0)||!r.motivo.trim());
     if(incomplete){showToast('Preencha item, quantidade e motivo em todas as linhas utilizadas.');return;}
-    const now=new Date();
-    const req={id:uid(),numero:`SOL-${now.toISOString().slice(0,10).replaceAll('-','')}-${String(state.purchaseRequests.length+1).padStart(3,'0')}`,usuarioId:current.id,solicitante:current.nome,setor:current.setor||'Não informado',criadoEm:now.toISOString(),status:'Pendente',itens:valid.map(r=>({item:r.item.trim(),quantidade:Number(r.quantidade),unidade:r.unidade,motivo:r.motivo.trim()})),observacaoCompras:''};
-    state.purchaseRequests.unshift(req);
-    const ok=await savePurchaseRequests(false);
-    if(ok){rows=[{item:'',quantidade:'',unidade:'unidade',motivo:''}];renderRows();showToast('Solicitação enviada ao setor de compras.');}
+    button.disabled=true;button.textContent='Enviando...';
+    try{
+      const request=await createPurchaseRequest(valid);
+      rows=[{item:'',quantidade:'',unidade:'unidade',motivo:''}];
+      renderRows();render();showToast(`Solicitação ${request.numero} enviada ao setor de Compras.`);
+    }catch(err){console.error(err);showToast('Erro ao enviar solicitação: '+(err?.message||err));button.disabled=false;button.textContent='Enviar solicitação';}
   }},'Enviar solicitação')));
   wrap.appendChild(form);
 
-  const mine=state.purchaseRequests.filter(r=>r.usuarioId===current.id||(!r.usuarioId&&r.solicitante===current.nome)).sort((a,b)=>String(b.criadoEm).localeCompare(String(a.criadoEm)));
+  const mine=state.purchaseRequests.filter(r=>r.usuarioId===current.id).sort((a,b)=>String(b.criadoEm).localeCompare(String(a.criadoEm)));
   wrap.appendChild(el('h2',{style:'margin:26px 0 10px;font-size:18px;'},'Minhas solicitações'));
   if(!mine.length){wrap.appendChild(el('div',{class:'empty-state'},el('div',{class:'big'},'📭'),el('div',{},'Você ainda não enviou nenhuma solicitação.')));return wrap;}
   mine.forEach(req=>wrap.appendChild(renderPurchaseRequestCard(req,false)));
@@ -2797,7 +2937,10 @@ function renderPurchaseRequestCard(req,manage){
   if(manage){
     const statusSelect=el('select',{style:'padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;'},...['Pendente','Em análise','Aprovada','Concluída','Recusada'].map(s=>el('option',{value:s,selected:s===req.status?'selected':null},s)));
     const note=el('input',{value:req.observacaoCompras||'',placeholder:'Observação opcional para o solicitante',style:'min-width:260px;flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:7px;'});
-    card.appendChild(el('div',{class:'request-actions'},statusSelect,note,el('button',{class:'btn small',onClick:async()=>{req.status=statusSelect.value;req.observacaoCompras=note.value.trim();req.atualizadoEm=new Date().toISOString();await savePurchaseRequests(false);showToast('Solicitação atualizada.');}},'Salvar status'),el('button',{class:'btn danger-txt small',onClick:()=>askConfirm('Excluir esta solicitação?',async()=>{state.purchaseRequests=state.purchaseRequests.filter(r=>r.id!==req.id);await savePurchaseRequests(false);render();showToast('Solicitação excluída.');})},'Excluir')));
+    card.appendChild(el('div',{class:'request-actions'},statusSelect,note,
+      el('button',{class:'btn small',onClick:async()=>{try{await updatePurchaseRequest(req,statusSelect.value,note.value.trim());render();showToast('Solicitação atualizada.');}catch(err){showToast('Erro ao atualizar: '+(err?.message||err));}}},'Salvar status'),
+      el('button',{class:'btn danger-txt small',onClick:()=>askConfirm('Excluir esta solicitação?',async()=>{try{await deletePurchaseRequest(req);render();showToast('Solicitação excluída.');}catch(err){showToast('Erro ao excluir: '+(err?.message||err));}})},'Excluir')
+    ));
   }
   return card;
 }
@@ -2806,7 +2949,7 @@ function renderSolicitacoesCompras(){
   const wrap=el('div',{});
   wrap.appendChild(el('h1',{class:'page-title'},'Solicitações de compras'));
   wrap.appendChild(el('p',{class:'page-sub'},'Pedidos enviados pelos setores para análise do time de Compras e da Gerência.'));
-  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'🧪'),el('div',{},el('strong',{},'Etapa de protótipo'),el('div',{},'As solicitações desta versão são compartilhadas somente entre usuários cadastrados neste mesmo navegador.'))));
+  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'☁️'),el('div',{},el('strong',{},'Dados compartilhados'),el('div',{},'As solicitações abaixo estão salvas no Supabase e aparecem para Compras e Gerência em todos os computadores autorizados.'))));
   const pending=state.purchaseRequests.filter(r=>r.status==='Pendente').length;
   const analysis=state.purchaseRequests.filter(r=>r.status==='Em análise').length;
   const done=state.purchaseRequests.filter(r=>['Aprovada','Concluída'].includes(r.status)).length;
@@ -2820,41 +2963,71 @@ function renderSolicitacoesCompras(){
   return wrap;
 }
 
-function openUserModal(user=null){if(!isPrivilegedUser()){showToast('Acesso restrito.');return;}state.modal={type:'user',editing:user};render();}
+function openUserModal(user=null){
+  if(!isPrivilegedUser()){showToast('Acesso restrito.');return;}
+  if(!user){showToast('Crie o usuário em Supabase → Authentication → Users. Depois atualize esta lista.');return;}
+  state.modal={type:'user',editing:user};render();
+}
+
 function renderUsers(){
   const wrap=el('div',{});
   wrap.appendChild(el('h1',{class:'page-title'},'Usuários e acessos'));
-  wrap.appendChild(el('p',{class:'page-sub'},'Cadastre acessos de Compras, Gerência ou dos demais setores.'));
-  wrap.appendChild(el('div',{class:'toolbar'},el('span',{style:'color:var(--ink-soft);font-size:13px;'},`${state.users.length} usuário(s) cadastrado(s)`),el('button',{class:'btn',onClick:()=>openUserModal()},'+ Novo usuário')));
+  wrap.appendChild(el('p',{class:'page-sub'},'Usuários autenticados pelo Supabase. As senhas não ficam armazenadas neste HTML.'));
+  wrap.appendChild(el('div',{class:'readonly-banner'},el('span',{style:'font-size:18px;'},'🔐'),el('div',{},el('strong',{},'Cadastro seguro'),el('div',{},'Para criar um novo acesso, use Supabase → Authentication → Users. Depois configure o perfil e o setor nesta tela ou pelo SQL.'))));
+  wrap.appendChild(el('div',{class:'toolbar'},
+    el('span',{style:'color:var(--ink-soft);font-size:13px;'},`${state.users.length} usuário(s) no Supabase`),
+    el('button',{class:'btn secondary',onClick:async()=>{try{await loadUsers();render();showToast('Lista de usuários atualizada.');}catch(err){showToast('Erro ao atualizar usuários: '+(err?.message||err));}}},'↻ Atualizar lista')
+  ));
   const card=el('div',{class:'users-card'});
-  if(!state.users.length){card.appendChild(el('div',{class:'dash-empty'},'Nenhum usuário cadastrado.'));wrap.appendChild(card);return wrap;}
+  if(!state.users.length){card.appendChild(el('div',{class:'dash-empty'},'Nenhum perfil encontrado. Crie o usuário no Authentication e execute a configuração do perfil.'));wrap.appendChild(card);return wrap;}
   state.users.slice().sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(u=>{
     const normalized=normalizeUser(u);const roleClass=normalized.role==='gerencia'?'gerencia':normalized.role==='setor'?'setor':'';
     card.appendChild(el('div',{class:'user-list-row'},
-      el('div',{class:'user-name-wrap'},el('div',{class:'user-avatar'},initials(normalized.nome)),el('div',{},el('div',{style:'font-weight:700;'},normalized.nome),el('div',{class:'user-sector'},normalized.setor||'Acesso geral'))),
+      el('div',{class:'user-name-wrap'},el('div',{class:'user-avatar'},initials(normalized.nome)),el('div',{},el('div',{style:'font-weight:700;'},normalized.nome),el('div',{class:'user-sector'},normalized.email||'Sem e-mail'))),
       el('div',{},el('span',{class:'role-badge '+roleClass},roleLabel(normalized))),
-      el('div',{class:'user-sector'},normalized.senha?'Senha cadastrada':'Sem senha'),
-      el('div',{class:'stock-inline-actions'},el('button',{class:'btn secondary small',onClick:()=>openUserModal(u)},'Editar'),el('button',{class:'btn danger-txt small',disabled:normalized.id===state.currentUser?.id?'disabled':null,onClick:()=>{if(normalized.id===state.currentUser?.id)return;askConfirm('Excluir este usuário?',async()=>{state.users=state.users.filter(x=>x.id!==normalized.id);await saveUsers();render();showToast('Usuário excluído.');});}},'Excluir'))
+      el('div',{class:'user-sector'},normalized.setor||'Acesso geral',normalized.ativo===false?' · Desativado':''),
+      el('div',{class:'stock-inline-actions'},el('button',{class:'btn secondary small',onClick:()=>openUserModal(u)},'Editar perfil'))
     ));
   });
   wrap.appendChild(card);return wrap;
 }
 
 function renderUserForm(){
-  const editing=state.modal.editing||null;const modal=el('div',{class:'modal'});modal.appendChild(el('h3',{},editing?'Editar usuário':'Novo usuário'));
+  const editing=state.modal.editing;
+  const modal=el('div',{class:'modal'});
+  modal.appendChild(el('h3',{},'Editar perfil de acesso'));
   const nome=el('input',{value:editing?.nome||'',placeholder:'Nome completo'});
-  const senha=el('input',{type:'password',value:editing?.senha||'',placeholder:'Senha de acesso'});
-  const role=el('select',{},el('option',{value:'compras',selected:(editing?.role||'compras')==='compras'?'selected':null},'Compras — acesso a todas as telas'),el('option',{value:'gerencia',selected:editing?.role==='gerencia'?'selected':null},'Gerência — acesso a todas as telas'),el('option',{value:'setor',selected:editing?.role==='setor'?'selected':null},'Demais setores — estoque e solicitações'));
-  const sectorWrap=el('div',{class:'field'});const sector=el('input',{value:editing?.setor||'',placeholder:'Ex: Qualidade',list:'department-list'});sectorWrap.appendChild(el('label',{},'Setor *'));sectorWrap.appendChild(sector);sectorWrap.appendChild(el('datalist',{id:'department-list'},...DEFAULT_DEPARTMENTS.map(s=>el('option',{value:s}))));
+  const role=el('select',{},
+    el('option',{value:'compras',selected:editing?.role==='compras'?'selected':null},'Compras — acesso a todas as telas'),
+    el('option',{value:'gerencia',selected:editing?.role==='gerencia'?'selected':null},'Gerência — acesso a todas as telas'),
+    el('option',{value:'setor',selected:editing?.role==='setor'?'selected':null},'Demais setores — estoque e solicitações')
+  );
+  const sectorWrap=el('div',{class:'field'});
+  const sector=el('select',{},el('option',{value:''},'Selecione o setor'),...state.sectors.map(s=>el('option',{value:s.id,selected:s.id===editing?.setorId?'selected':null},s.nome)));
+  sectorWrap.appendChild(el('label',{},'Setor *'));sectorWrap.appendChild(sector);
+  const ativo=el('select',{},el('option',{value:'true',selected:editing?.ativo!==false?'selected':null},'Ativo'),el('option',{value:'false',selected:editing?.ativo===false?'selected':null},'Desativado'));
   const updateSectorVisibility=()=>{sectorWrap.style.display=role.value==='setor'?'block':'none';};role.addEventListener('change',updateSectorVisibility);updateSectorVisibility();
-  modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));modal.appendChild(el('div',{class:'field'},el('label',{},'Perfil de acesso *'),role));modal.appendChild(sectorWrap);modal.appendChild(el('div',{class:'field'},el('label',{},'Senha'),senha));
+  modal.appendChild(el('div',{class:'field'},el('label',{},'E-mail'),el('input',{value:editing?.email||'',disabled:'disabled'})));
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Nome *'),nome));
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Perfil de acesso *'),role));
+  modal.appendChild(sectorWrap);
+  modal.appendChild(el('div',{class:'field'},el('label',{},'Situação'),ativo));
   modal.appendChild(el('div',{class:'modal-actions'},el('button',{class:'btn secondary',onClick:closeModal},'Cancelar'),el('button',{class:'btn',onClick:async()=>{
-    const n=nome.value.trim();if(!n){nome.focus();return;}if(role.value==='setor'&&!sector.value.trim()){showToast('Informe o setor do usuário.');sector.focus();return;}
-    if(state.users.some(u=>u.id!==editing?.id&&u.nome.toLowerCase()===n.toLowerCase())){showToast('Já existe um usuário com esse nome.');return;}
-    const data={id:editing?.id||uid(),nome:n,senha:senha.value,role:role.value,setor:role.value==='setor'?sector.value.trim():''};
-    if(editing){Object.assign(editing,data);if(state.currentUser?.id===editing.id)state.currentUser=editing;}else state.users.push(data);
-    await saveUsers();closeModal();showToast(editing?'Usuário atualizado.':'Usuário cadastrado.');
-  }},'Salvar usuário')));return modal;
+    const n=nome.value.trim();if(!n){nome.focus();return;}
+    if(role.value==='setor'&&!sector.value){showToast('Selecione o setor do usuário.');sector.focus();return;}
+    try{
+      const setorId=role.value==='setor'?sector.value:null;
+      const {error}=await supabaseClient.from('perfis_usuarios').update({nome:n,perfil:role.value,setor_id:setorId,ativo:ativo.value==='true'}).eq('id',editing.id);
+      dbError(error);
+      await loadUsers();
+      if(state.currentUser?.id===editing.id){
+        const updated=state.users.find(u=>u.id===editing.id);
+        if(updated) state.currentUser=updated;
+      }
+      closeModal();showToast('Perfil atualizado no Supabase.');
+    }catch(err){showToast('Erro ao atualizar perfil: '+(err?.message||err));}
+  }},'Salvar perfil')));
+  return modal;
 }
 
 function renderModal(){
@@ -2873,6 +3046,10 @@ function renderModal(){
         el('div', {class:'field'},
           el('label', {}, 'Nome'),
           el('input', {value:u.nome || '', disabled:'disabled'})
+        ),
+        el('div', {class:'field'},
+          el('label', {}, 'E-mail'),
+          el('input', {value:u.email || '', disabled:'disabled'})
         ),
         el('div', {class:'modal-actions'},
           el('button', {class:'btn secondary', onClick:()=>{ state.modal=null; render(); }}, 'Fechar'),
@@ -3422,36 +3599,37 @@ function initials(nome){
 }
 
 function renderLoginScreen(){
-  const wrap = el('div', {class:'login-wrap'});
-  const card = el('div', {class:'login-card'});
-  card.appendChild(el('p', {class:'login-brand'}, 'Meggs Supply'));
+  const wrap=el('div',{class:'login-wrap'});
+  const card=el('div',{class:'login-card'});
+  card.appendChild(el('p',{class:'login-brand'},'Meggs Supply'));
+  card.appendChild(el('p',{class:'login-sub'},'Entre com o e-mail e a senha cadastrados no Supabase'));
+  if(state.loginError) card.appendChild(el('div',{class:'login-error'},state.loginError));
 
-  if(state.loginMode === 'password' && state.loginTarget){
-    const user = normalizeUser(state.loginTarget);
-    card.appendChild(el('p', {class:'login-sub'}, `Digite a senha de ${user.nome}`));
-    card.appendChild(el('div',{class:'login-role-note'},el('span',{},roleLabel(user)),user.setor?el('strong',{},user.setor):null));
-    if(state.loginError) card.appendChild(el('div', {class:'login-error'}, state.loginError));
-    const pwField = el('div', {class:'field'}, el('label',{},'Senha'), el('input', {type:'password', placeholder:'••••••'}));
-    const pwInput = pwField.querySelector('input');card.appendChild(pwField);
-    const doLogin = ()=>{if(pwInput.value === user.senha){state.currentUser = user;state.view=defaultViewForUser();state.loginMode = 'select';state.loginTarget = null;state.loginError = '';render();}else{state.loginError = 'Senha incorreta. Tente novamente.';render();}};
-    pwInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doLogin(); });
-    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginTarget=null; state.loginError=''; render(); }}, 'Voltar'),el('button', {class:'btn', onClick: doLogin}, 'Entrar')));
-    setTimeout(()=>pwInput.focus(), 0);
-  } else if(state.loginMode === 'new' && state.users.length===0){
-    card.appendChild(el('p', {class:'login-sub'}, 'Criar o primeiro acesso de Compras'));
-    const nomeField = el('div', {class:'field'}, el('label',{},'Nome *'), el('input', {placeholder:'Ex: Matheus'}));
-    const senhaField = el('div', {class:'field'}, el('label',{},'Senha'), el('input', {type:'password', placeholder:'Crie uma senha de acesso'}));
-    const nomeInput = nomeField.querySelector('input');const senhaInput = senhaField.querySelector('input');card.appendChild(nomeField);card.appendChild(senhaField);
-    if(state.loginError) card.appendChild(el('div', {class:'login-error'}, state.loginError));
-    card.appendChild(el('div', {class:'modal-actions', style:'justify-content:space-between;'},el('button', {class:'btn secondary', onClick:()=>{ state.loginMode='select'; state.loginError=''; render(); }}, 'Voltar'),el('button', {class:'btn', onClick: async ()=>{const nome = nomeInput.value.trim();if(!nome){ nomeInput.focus(); return; }const user = { id: uid(), nome, senha: senhaInput.value, role:'compras', setor:'' };state.users.push(user);await saveUsers();state.currentUser = user;state.view='dashboard';state.loginMode = 'select';state.loginError = '';render();}}, 'Criar e entrar')));
-  } else {
-    card.appendChild(el('p', {class:'login-sub'}, state.users.length ? 'Selecione seu usuário para continuar' : 'Crie o primeiro usuário de Compras para começar'));
-    state.users.forEach(raw=>{const u=normalizeUser(raw);const roleClass=u.role==='gerencia'?'gerencia':u.role==='setor'?'setor':'';card.appendChild(el('button', {class:'user-tile', onClick:()=>{if(u.senha){state.loginMode = 'password';state.loginTarget = u;state.loginError = '';}else{state.currentUser = u;state.view=defaultViewForUser();}render();}},el('div', {class:'user-avatar'}, initials(u.nome)),el('div', {style:'flex:1;'},el('div',{class:'user-tile-name'},u.nome),el('div',{class:'user-sector'},u.setor||roleLabel(u))),el('span',{class:'role-badge '+roleClass},roleLabel(u))));});
-    if(!state.users.length) card.appendChild(el('div', {class:'login-link-row'},el('button', {class:'login-link', onClick:()=>{ state.loginMode='new'; state.loginError=''; render(); }}, '+ Criar primeiro usuário')));
-    else card.appendChild(el('div',{class:'login-link-row',style:'font-size:11px;color:var(--ink-soft);'},'Novos usuários são cadastrados em “Usuários e acessos”.'));
-  }
-  wrap.appendChild(card);return wrap;
+  const emailField=el('div',{class:'field'},el('label',{},'E-mail'),el('input',{type:'email',autocomplete:'username',value:state.loginEmail||'',placeholder:'seuemail@empresa.com.br'}));
+  const passwordField=el('div',{class:'field'},el('label',{},'Senha'),el('input',{type:'password',autocomplete:'current-password',placeholder:'Digite sua senha'}));
+  const emailInput=emailField.querySelector('input');
+  const passwordInput=passwordField.querySelector('input');
+  card.appendChild(emailField);
+  card.appendChild(passwordField);
+  card.appendChild(el('div',{class:'login-role-note',style:'align-items:flex-start;flex-direction:column;gap:3px;'},el('strong',{},'🔐 Login protegido pelo Supabase Auth'),el('span',{},'Acessos de Compras, Gerência e demais setores.')));
+
+  emailInput.addEventListener('input',()=>{state.loginEmail=emailInput.value;});
+  const doLogin=()=>{
+    if(state.authBusy)return;
+    const email=emailInput.value.trim();
+    state.loginEmail=email;
+    if(!email){state.loginError='Informe seu e-mail.';render();return;}
+    if(!passwordInput.value){state.loginError='Informe sua senha.';render();return;}
+    authenticate(email,passwordInput.value);
+  };
+  [emailInput,passwordInput].forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+  card.appendChild(el('button',{class:'btn',style:'width:100%;margin-top:4px;',disabled:state.authBusy?'disabled':null,onClick:doLogin},state.authBusy?'Entrando...':'Entrar'));
+  card.appendChild(el('div',{class:'login-link-row',style:'font-size:11px;color:var(--ink-soft);line-height:1.5;'},'Use exatamente o e-mail criado em Authentication → Users.'));
+  wrap.appendChild(card);
+  setTimeout(()=>emailInput.focus(),0);
+  return wrap;
 }
+
 
 /* ---------------- Root render ---------------- */
 
@@ -3540,7 +3718,7 @@ function renderConfirmDialog(){
   return overlay;
 }
 
-loadData();
+initializeApp();
 </script>
 </body>
 </html>
